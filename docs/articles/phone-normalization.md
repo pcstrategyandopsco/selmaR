@@ -1,0 +1,117 @@
+# Phone Number Normalisation
+
+## Overview
+
+SELMA stores phone numbers in various formats.
+[`standardize_phone()`](https://pcstrategyandopsco.github.io/selmaR/reference/standardize_phone.md)
+uses the
+[dialvalidator](https://cran.r-project.org/package=dialvalidator)
+package (powered by Google’s libphonenumber metadata) to parse,
+validate, and format phone numbers to E.164 international format.
+
+By default, numbers without a country code are tried as NZ first, then
+AU. This handles the common case of SELMA instances with students across
+both countries.
+
+## Examples
+
+### New Zealand (+64)
+
+``` r
+
+library(selmaR)
+
+standardize_phone("021 123 4567")     # NZ mobile with leading 0
+#> [1] "+64211234567"
+#> "+64211234567"
+
+standardize_phone("0211234567")       # No spaces
+#> [1] "+64211234567"
+#> "+64211234567"
+
+standardize_phone("+64211234567")     # Already international
+#> [1] "+64211234567"
+#> "+64211234567"
+
+standardize_phone("211234567")        # Mobile without leading 0
+#> [1] "+64211234567"
+#> "+64211234567"
+```
+
+### Australia (+61)
+
+AU numbers with a `+61` prefix work directly. Local AU numbers
+(e.g. `04xx`) are automatically detected via the NZ-then-AU fallback —
+`04` is not a valid NZ prefix, so dialvalidator correctly parses it as
+Australian:
+
+``` r
+
+standardize_phone("+61412345678")     # Already international
+#> [1] "+61412345678"
+#> "+61412345678"
+
+standardize_phone("0412345678")       # AU local — detected automatically
+#> [1] "+61412345678"
+#> "+61412345678"
+```
+
+### Invalid Numbers
+
+Numbers that fail validation in all regions are returned as `NA`:
+
+``` r
+
+standardize_phone("1234")            # Too short
+#> [1] NA
+#> NA
+
+standardize_phone(NA)                # NA passthrough
+#> [1] NA
+#> NA
+
+standardize_phone("")                # Empty string
+#> [1] NA
+#> NA
+```
+
+## Vectorised Usage
+
+Use
+[`standardize_phones()`](https://pcstrategyandopsco.github.io/selmaR/reference/standardize_phones.md)
+for vectors — handles mixed NZ and AU numbers:
+
+``` r
+
+phones <- c("021 123 4567", "0412345678", "+61412345678", NA)
+standardize_phones(phones)
+#> [1] "+64211234567" "+61412345678" "+61412345678" NA
+#> [1] "+64211234567" "+61412345678" "+61412345678" NA
+```
+
+## Use with dplyr
+
+``` r
+
+library(dplyr)
+
+students |>
+  mutate(
+    mobile_std = standardize_phone(mobilephone),
+    secondary_std = standardize_phone(secondaryphone)
+  )
+```
+
+## Custom Regions
+
+Override the default fallback regions if your student population
+differs:
+
+``` r
+
+# Only try AU (no NZ fallback)
+standardize_phones(phones, default_regions = "AU")
+
+# Try NZ, AU, then UK
+standardize_phones(phones, default_regions = c("NZ", "AU", "GB"))
+```

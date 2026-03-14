@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 520" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="10" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#4361EE"/>
+    </marker>
+    <marker id="arrow-back" viewBox="0 0 10 6" refX="0" refY="3" markerWidth="10" markerHeight="6" orient="auto">
+      <path d="M10,0 L0,3 L10,6 Z" fill="#64748B"/>
+    </marker>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="820" height="520" fill="#FAFBFC" rx="8"/>
+
+  <!-- Title -->
+  <text x="410" y="36" text-anchor="middle" font-size="18" font-weight="700" fill="#1E293B">How the MCP Server Works</text>
+
+  <!-- ── Box 1: You ── -->
+  <rect x="30" y="70" width="140" height="100" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="100" y="108" text-anchor="middle" font-size="28">💬</text>
+  <text x="100" y="133" text-anchor="middle" font-size="13" font-weight="600" fill="#1E293B">You</text>
+  <text x="100" y="152" text-anchor="middle" font-size="10.5" fill="#64748B">plain English</text>
+
+  <!-- ── Box 2: Claude ── -->
+  <rect x="230" y="70" width="140" height="100" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="300" y="108" text-anchor="middle" font-size="28">🤖</text>
+  <text x="300" y="133" text-anchor="middle" font-size="13" font-weight="600" fill="#1E293B">Claude</text>
+  <text x="300" y="152" text-anchor="middle" font-size="10.5" fill="#64748B">picks the right tool</text>
+
+  <!-- ── Box 3: MCP Server (larger, highlighted) ── -->
+  <rect x="430" y="56" width="170" height="128" rx="12" fill="#EEF2FF" stroke="#4361EE" stroke-width="2" filter="url(#shadow)"/>
+  <text x="515" y="92" text-anchor="middle" font-size="22">🛡️</text>
+  <text x="515" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#4361EE">selmaR MCP</text>
+  <text x="515" y="133" text-anchor="middle" font-size="13" font-weight="700" fill="#4361EE">Server</text>
+  <text x="515" y="152" text-anchor="middle" font-size="10" fill="#64748B">filters PII, hashes IDs,</text>
+  <text x="515" y="165" text-anchor="middle" font-size="10" fill="#64748B">inspects code, audits</text>
+
+  <!-- ── Box 4: SELMA API ── -->
+  <rect x="660" y="70" width="130" height="100" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="725" y="108" text-anchor="middle" font-size="28">☁️</text>
+  <text x="725" y="133" text-anchor="middle" font-size="13" font-weight="600" fill="#1E293B">SELMA API</text>
+  <text x="725" y="152" text-anchor="middle" font-size="10.5" fill="#64748B">your instance</text>
+
+  <!-- ── Forward arrows ── -->
+  <line x1="170" y1="112" x2="226" y2="112" stroke="#4361EE" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="370" y1="112" x2="426" y2="112" stroke="#4361EE" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="600" y1="112" x2="656" y2="112" stroke="#4361EE" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ── Return arrows ── -->
+  <line x1="226" y1="132" x2="170" y2="132" stroke="#64748B" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-back)"/>
+  <line x1="426" y1="132" x2="370" y2="132" stroke="#64748B" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-back)"/>
+  <line x1="656" y1="132" x2="600" y2="132" stroke="#64748B" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-back)"/>
+
+  <!-- ── Arrow labels ── -->
+  <text x="198" y="105" text-anchor="middle" font-size="9" fill="#4361EE">question</text>
+  <text x="198" y="149" text-anchor="middle" font-size="9" fill="#64748B">answer</text>
+
+  <text x="398" y="105" text-anchor="middle" font-size="9" fill="#4361EE">tool call</text>
+  <text x="398" y="149" text-anchor="middle" font-size="9" fill="#64748B">safe result</text>
+
+  <text x="628" y="105" text-anchor="middle" font-size="9" fill="#4361EE">REST</text>
+  <text x="628" y="149" text-anchor="middle" font-size="9" fill="#64748B">JSON</text>
+
+  <!-- ── Divider ── -->
+  <line x1="30" y1="215" x2="790" y2="215" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- ── Defence layers heading ── -->
+  <text x="410" y="248" text-anchor="middle" font-size="14" font-weight="700" fill="#1E293B">7 Defence Layers — what happens inside the MCP server</text>
+
+  <!-- ── Layer boxes (2 rows of 4/3) ── -->
+  <!-- Row 1 -->
+  <rect x="30" y="270" width="175" height="72" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow)"/>
+  <circle cx="52" cy="292" r="12" fill="#EEF2FF"/>
+  <text x="52" y="297" text-anchor="middle" font-size="12" font-weight="700" fill="#4361EE">1</text>
+  <text x="72" y="296" font-size="11" font-weight="600" fill="#1E293B">ID Pseudonymisation</text>
+  <text x="42" y="314" font-size="9.5" fill="#64748B">Session-scoped hashing of</text>
+  <text x="42" y="327" font-size="9.5" fill="#64748B">all ID columns</text>
+
+  <rect x="222" y="270" width="175" height="72" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow)"/>
+  <circle cx="244" cy="292" r="12" fill="#EEF2FF"/>
+  <text x="244" y="297" text-anchor="middle" font-size="12" font-weight="700" fill="#4361EE">2</text>
+  <text x="264" y="296" font-size="11" font-weight="600" fill="#1E293B">Code Inspection</text>
+  <text x="234" y="314" font-size="9.5" fill="#64748B">AST analysis blocks I/O,</text>
+  <text x="234" y="327" font-size="9.5" fill="#64748B">namespace access (::)</text>
+
+  <rect x="414" y="270" width="175" height="72" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow)"/>
+  <circle cx="436" cy="292" r="12" fill="#EEF2FF"/>
+  <text x="436" y="297" text-anchor="middle" font-size="12" font-weight="700" fill="#4361EE">3</text>
+  <text x="456" y="296" font-size="11" font-weight="600" fill="#1E293B">Input Allowlist</text>
+  <text x="426" y="314" font-size="9.5" fill="#64748B">Only 7 pre-defined tools;</text>
+  <text x="426" y="327" font-size="9.5" fill="#64748B">no raw API access</text>
+
+  <rect x="606" y="270" width="175" height="72" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow)"/>
+  <circle cx="628" cy="292" r="12" fill="#EEF2FF"/>
+  <text x="628" y="297" text-anchor="middle" font-size="12" font-weight="700" fill="#4361EE">4</text>
+  <text x="648" y="296" font-size="11" font-weight="600" fill="#1E293B">Field Policy</text>
+  <text x="618" y="314" font-size="9.5" fill="#64748B">YAML allowlist per entity;</text>
+  <text x="618" y="327" font-size="9.5" fill="#64748B">PII columns never sent</text>
+
+  <!-- Row 2 -->
+  <rect x="95" y="360" width="175" height="72" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow)"/>
+  <circle cx="117" cy="382" r="12" fill="#EEF2FF"/>
+  <text x="117" y="387" text-anchor="middle" font-size="12" font-weight="700" fill="#4361EE">5</text>
+  <text x="137" y="386" font-size="11" font-weight="600" fill="#1E293B">Aggregates Only</text>
+  <text x="107" y="404" font-size="9.5" fill="#64748B">Structured tools return</text>
+  <text x="107" y="417" font-size="9.5" fill="#64748B">counts/stats, never rows</text>
+
+  <rect x="318" y="360" width="175" height="72" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow)"/>
+  <circle cx="340" cy="382" r="12" fill="#EEF2FF"/>
+  <text x="340" y="387" text-anchor="middle" font-size="12" font-weight="700" fill="#4361EE">6</text>
+  <text x="360" y="386" font-size="11" font-weight="600" fill="#1E293B">Output Scanning</text>
+  <text x="330" y="404" font-size="9.5" fill="#64748B">Regex + PII dictionary on</text>
+  <text x="330" y="417" font-size="9.5" fill="#64748B">every response</text>
+
+  <rect x="541" y="360" width="175" height="72" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow)"/>
+  <circle cx="563" cy="382" r="12" fill="#EEF2FF"/>
+  <text x="563" y="387" text-anchor="middle" font-size="12" font-weight="700" fill="#4361EE">7</text>
+  <text x="583" y="386" font-size="11" font-weight="600" fill="#1E293B">Audit Logging</text>
+  <text x="553" y="404" font-size="9.5" fill="#64748B">JSONL log + HTML session</text>
+  <text x="553" y="417" font-size="9.5" fill="#64748B">report on shutdown</text>
+
+  <!-- ── Footer ── -->
+  <text x="410" y="472" text-anchor="middle" font-size="11" fill="#94A3B8">All data stays local — nothing leaves your machine except the Claude API call.</text>
+  <text x="410" y="490" text-anchor="middle" font-size="11" fill="#94A3B8">The server runs as a stdio process; no network ports are opened.</text>
+</svg>

@@ -1,0 +1,69 @@
+/* Clickable diagram */
+.diagram-container {
+  position: relative;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.diagram-container::after {
+  content: "\01F50D  Click to expand";
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: #4361EE;
+  color: #fff;
+  font-size: 12px;
+  font-family: "Helvetica Neue", sans-serif;
+  padding: 6px 14px;
+  border-radius: 4px;
+  pointer-events: none;
+  transition: background 0.2s ease;
+}
+
+.diagram-container:hover::after {
+  background: #3651D4;
+}
+
+/* Fullscreen modal overlay */
+.diagram-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.88);
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.diagram-modal.active {
+  display: flex;
+}
+
+.diagram-modal img {
+  max-width: 95vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 4px 40px rgba(0, 0, 0, 0.4);
+}
+
+.diagram-modal-close {
+  position: fixed;
+  top: 1rem;
+  right: 1.5rem;
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 14px;
+  font-family: "Helvetica Neue", sans-serif;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.diagram-modal-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
