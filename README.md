@@ -111,31 +111,31 @@ Student data is sensitive. The MCP server has **7 defence layers** including
 input allowlisting, configurable field policies, output scanning, and
 pseudonymised IDs. All data stays local — nothing is sent to external services
 beyond the Claude API. See
-[MCP Server Design & Security](articles/mcp-server-design.html) for the full
+[MCP Server Design & Security](https://pcstrategyandopsco.github.io/selmaR/articles/mcp-server-design.html) for the full
 architecture.
 
 ## Explore the Guides
 
 **Start here**
 
-- **[Getting Started](articles/getting-started.html)** — Connect to SELMA, fetch your first dataset, and build a student pipeline — end to end in 10 minutes.
+- **[Getting Started](https://pcstrategyandopsco.github.io/selmaR/articles/getting-started.html)** — Connect to SELMA, fetch your first dataset, and build a student pipeline — end to end in 10 minutes.
 
 **Use cases**
 
-- **[EFTS Pro-Rata Reporting](articles/efts-reporting.html)** — Generate monthly EFTS breakdowns by funding source for TEC planning and internal dashboards.
-- **[Phone Number Normalisation](articles/phone-normalization.html)** — Standardise NZ and AU phone numbers so you can match SELMA students to external systems.
+- **[EFTS Pro-Rata Reporting](https://pcstrategyandopsco.github.io/selmaR/articles/efts-reporting.html)** — Generate monthly EFTS breakdowns by funding source for TEC planning and internal dashboards.
+- **[Phone Number Normalisation](https://pcstrategyandopsco.github.io/selmaR/articles/phone-normalization.html)** — Standardise NZ and AU phone numbers so you can match SELMA students to external systems.
 
 **MCP Server — ask Claude about your data**
 
-> New to MCP? Start with **[MCP Examples](articles/mcp-examples.html)** — see
+> New to MCP? Start with **[MCP Examples](https://pcstrategyandopsco.github.io/selmaR/articles/mcp-examples.html)** — see
 > what happens when you point Claude at your SELMA instance and ask questions
 > in plain English. Then read
-> **[MCP Server Design & Security](articles/mcp-server-design.html)** to
+> **[MCP Server Design & Security](https://pcstrategyandopsco.github.io/selmaR/articles/mcp-server-design.html)** to
 > understand the 7 defence layers that protect student PII.
 
 **Reference**
 
-- **[Limitations & Notes](articles/limitations.html)** — EFTS accuracy caveats, API rate limits, and known quirks worth knowing before you go to production.
+- **[Limitations & Notes](https://pcstrategyandopsco.github.io/selmaR/articles/limitations.html)** — EFTS accuracy caveats, API rate limits, and known quirks worth knowing before you go to production.
 
 ## Configuration
 
