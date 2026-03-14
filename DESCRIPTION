@@ -11,7 +11,8 @@ Description: Provides a clean interface to the SELMA student management system
     for NZ/AU phone normalisation, SELMA date parsing, and EFTS pro-rata
     calculation for New Zealand TEOs.
 License: MIT + file LICENSE
-URL: https://github.com/pcstrategyandopsco/selmaR
+URL: https://pcstrategyandopsco.github.io/selmaR/,
+    https://github.com/pcstrategyandopsco/selmaR
 BugReports: https://github.com/pcstrategyandopsco/selmaR/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
