@@ -3,7 +3,6 @@
 <!-- badges: start -->
 [![R-CMD-check](https://img.shields.io/badge/R--CMD--check-passing-brightgreen)](https://github.com/pcstrategyandopsco/selmaR)
 [![pkgdown](https://img.shields.io/badge/docs-pkgdown-4361EE)](https://pcstrategyandopsco.github.io/selmaR/)
-[![CRAN status](https://www.r-pkg.org/badges/version/selmaR)](https://CRAN.R-project.org/package=selmaR)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
 
