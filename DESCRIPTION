@@ -1,0 +1,42 @@
+Package: selmaR
+Title: R Client for the SELMA Student Management System API
+Version: 0.1.0
+Authors@R:
+    person("Peeyoosh", "Chandra", role = c("aut", "cre"),
+           email = "pc@strategyandops.co")
+Description: Provides a clean interface to the SELMA student management system
+    REST API. Handles authentication, Hydra JSON-LD pagination, and data
+    standardisation. Supports fetching students, enrolments, intakes,
+    components, and programmes with optional RDS caching. Includes utilities
+    for NZ/AU phone normalisation, SELMA date parsing, and EFTS pro-rata
+    calculation for New Zealand TEOs.
+License: MIT + file LICENSE
+URL: https://github.com/pcstrategyandopsco/selmaR
+BugReports: https://github.com/pcstrategyandopsco/selmaR/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    cli,
+    config,
+    dialvalidator,
+    dplyr,
+    httr2,
+    janitor,
+    jsonlite,
+    lubridate,
+    purrr,
+    rlang (>= 1.0.0),
+    stringr,
+    tibble,
+    tidyr
+Suggests:
+    httptest2,
+    knitr,
+    pkgdown,
+    progressr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
+VignetteBuilder: knitr

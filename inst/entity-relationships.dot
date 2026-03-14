@@ -1,0 +1,107 @@
+digraph selmaR {
+    // Global styling — clean, technical lithograph aesthetic
+    graph [
+        rankdir=TB
+        bgcolor="transparent"
+        fontname="Helvetica Neue"
+        fontsize=11
+        pad=0.4
+        nodesep=0.6
+        ranksep=0.7
+        splines=polyline
+    ]
+
+    node [
+        shape=record
+        style="filled"
+        fillcolor="#F8F9FA"
+        color="#1B4F72"
+        fontname="Helvetica Neue"
+        fontsize=10
+        fontcolor="#1B3C59"
+        penwidth=1.2
+        margin="0.15,0.08"
+    ]
+
+    edge [
+        color="#5D6D7E"
+        fontname="Helvetica Neue"
+        fontsize=8
+        fontcolor="#7F8C8D"
+        arrowsize=0.7
+        penwidth=0.8
+    ]
+
+    // Core entities — emphasised
+    programmes [
+        label="programmes|progid\lprogtitle\lprogcode\lprogefts\lprogstatus"
+        fillcolor="#D4E6F1"
+        penwidth=1.5
+    ]
+
+    intakes [
+        label="intakes|intakeid\lprogid\lcampus_id\lintake_name\lintakestartdate\lintakeenddate\lintakestatus"
+        fillcolor="#D4E6F1"
+        penwidth=1.5
+    ]
+
+    students [
+        label="students|id\lforename\lsurname\lemail1\lemail2\lmobilephone\lsecondaryphone\lnsn\ldob\lgender"
+        fillcolor="#D4E6F1"
+        penwidth=1.5
+    ]
+
+    enrolments [
+        label="enrolments|id\lstudent_id\lintake_id\lenrstatus\lenrstartdate\lenrenddate\lfundingsource"
+        fillcolor="#D4E6F1"
+        penwidth=1.5
+    ]
+
+    components [
+        label="components|compenrid\lenrolid\lstudentid\lcompid\lcomp_title\lcompenrefts\lcompenrstatus\lcompenrsource"
+        fillcolor="#D4E6F1"
+        penwidth=1.5
+    ]
+
+    // Supporting entities
+    campuses [
+        label="campuses|id\lshort_name\lsite_code\lcity\lcountry"
+        fillcolor="#D4E6F1"
+        penwidth=1.5
+    ]
+
+    classes [label="classes|id\lclass_name\lcapacity\lcampusid\lstartdate\lenddate"]
+    class_enrolments [label="class_enrolments|id\lenrolid\lstudentid\lclass\lintakecode\lfirstname\lsurname"]
+    notes [label="notes|noteid\lstudent_id\lenrolmentid\lnotearea\lnotetype\lnote1\lconfidential"]
+    addresses [label="addresses|addressid\lstudentid\lcontactid\lorgid\laddresstype\lstreet\lsuburb\lcity\lpostcode\lcountry"]
+    contacts [label="contacts|id\lforename\lsurname\lemail1\lmobilephone\lsecondaryphone\lworkphone\ltype\lstatus"]
+    student_contacts [label="student_contacts|id\lstudentid\lcontactid\lisemergency\lisprimary\lrelationship"]
+    organisations [label="organisations|id\lname\llegalname\lorgtype\lemail\lphone\lcountry"]
+    component_attempts [label="component_attempts|component_attempt_id\lcompenrid\lattemptdate\lattemptgrade\lattemptoutcome\lattemptnote"]
+    enrolment_awards [label="enrolment_awards|award_id\lenrol_id\laward_code\laward_name\lprog_id\lprog_credits"]
+
+    // Relationships — core chain
+    programmes -> intakes [label="  progid" headlabel="*" taillabel="1"]
+    intakes -> enrolments [label="  intake_id" headlabel="*" taillabel="1"]
+    students -> enrolments [label="  student_id" headlabel="*" taillabel="1"]
+    enrolments -> components [label="  enrolid" headlabel="*" taillabel="1"]
+
+    // Campuses & classes
+    campuses -> intakes [label="  campus_id" headlabel="*" taillabel="1"]
+    campuses -> classes [label="  campusid" headlabel="*" taillabel="1"]
+    enrolments -> class_enrolments [label="  enrolid" headlabel="*" taillabel="1"]
+
+    // Extensions
+    components -> component_attempts [label="  compenrid" headlabel="*" taillabel="1"]
+    enrolments -> enrolment_awards [label="  enrol_id" headlabel="*" taillabel="1"]
+    students -> notes [label="  student_id" headlabel="*" taillabel="1"]
+    students -> addresses [label="  studentid" headlabel="*" taillabel="1"]
+    students -> student_contacts [label="  studentid" headlabel="*" taillabel="1"]
+    contacts -> student_contacts [label="  contactid" headlabel="*" taillabel="1"]
+    organisations -> addresses [label="  orgid" headlabel="*" taillabel="1"]
+
+    // Layout hints
+    {rank=same; students; programmes; campuses}
+    {rank=same; enrolments; intakes; classes}
+    {rank=same; notes; addresses; student_contacts; class_enrolments}
+}

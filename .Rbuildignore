@@ -1,0 +1,9 @@
+^README\.md$
+^CLAUDE\.md$
+^\.claude$
+^LICENSE\.md$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
+^selma_openapi\.json$

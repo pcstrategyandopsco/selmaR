@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+docs/
+inst/doc
+CLAUDE.md
+.claude/
+config.yml
+Rplots.pdf

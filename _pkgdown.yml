@@ -1,0 +1,186 @@
+url: https://pcstrategyandopsco.github.io/selmaR/
+
+home:
+  strip_header: false
+  sidebar:
+    structure: [links, license, authors]
+  links:
+    - text: MCP Examples — Ask Claude About Your Data
+      href: articles/mcp-examples.html
+    - text: Getting Started Guide
+      href: articles/getting-started.html
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#4361EE"
+    border-radius: 0.375rem
+    bg: "#FFFFFF"
+    fg: "#1E293B"
+    code-bg: "#F1F5F9"
+
+navbar:
+  structure:
+    left: [intro, reference, articles]
+    right: [search, github]
+  components:
+    articles:
+      text: Articles
+      menu:
+        - text: "Getting Started"
+          href: articles/getting-started.html
+        - text: "---"
+        - text: "Use Cases"
+        - text: "EFTS Pro-Rata Reporting"
+          href: articles/efts-reporting.html
+        - text: "Phone Number Normalisation"
+          href: articles/phone-normalization.html
+        - text: "---"
+        - text: "MCP Server"
+        - text: "MCP Examples — Ask Claude About Your Data"
+          href: articles/mcp-examples.html
+        - text: "MCP Server Design & Security"
+          href: articles/mcp-server-design.html
+        - text: "---"
+        - text: "Limitations & Notes"
+          href: articles/limitations.html
+
+reference:
+  - title: Connection & Authentication
+    desc: Connect to a SELMA instance.
+    contents:
+      - selma_connect
+      - selma_disconnect
+
+  - title: Core Data Fetching
+    desc: Fetch the main SELMA entities. Most accept optional filter parameters.
+    contents:
+      - selma_students
+      - selma_enrolments
+      - selma_intakes
+      - selma_components
+      - selma_programmes
+      - selma_intake_enrolments
+      - selma_get
+      - selma_get_one
+
+  - title: Notes, Contacts & Addresses
+    desc: Student notes, external contacts, and address records.
+    contents:
+      - selma_notes
+      - selma_contacts
+      - selma_student_contacts
+      - selma_student_relations
+      - selma_student_org_contacts
+      - selma_addresses
+
+  - title: Classes & Campuses
+    desc: Timetable classes, campus locations, and class assignments.
+    contents:
+      - selma_classes
+      - selma_class_enrolments
+      - selma_student_classes
+      - selma_campuses
+
+  - title: Organisations & Users
+    desc: Employer/agent organisations and system users.
+    contents:
+      - selma_organisations
+      - selma_users
+
+  - title: Awards, Grades & Fees
+    desc: Qualifications, assessment attempts, grading, and fee schedules.
+    contents:
+      - selma_enrolment_awards
+      - selma_component_attempts
+      - selma_component_definitions
+      - selma_grading_schemes
+      - selma_intake_fees
+      - selma_fees_free
+
+  - title: Custom Fields
+    desc: Custom field definitions and per-record custom field values.
+    contents:
+      - selma_custom_fields
+      - selma_student_custom_fields
+      - selma_enrolment_custom_fields
+      - selma_component_custom_fields
+
+  - title: Programme & Enrolment Views
+    desc: Alternative views of student programmes and enrolments.
+    contents:
+      - selma_student_programmes
+      - selma_enrolments_by_campus
+      - selma_marketing_sources
+      - selma_milestones
+
+  - title: Joins & Pipelines
+    desc: Convenience functions for common entity joins.
+    contents:
+      - selma_student_pipeline
+      - selma_component_pipeline
+      - selma_join_students
+      - selma_join_intakes
+      - selma_join_components
+      - selma_join_programmes
+      - selma_join_notes
+      - selma_join_addresses
+      - selma_join_classes
+      - selma_join_attempts
+
+  - title: Utilities
+    desc: Date parsing, phone normalisation, and URL builders.
+    contents:
+      - parse_selma_date
+      - standardize_phone
+      - standardize_phones
+      - selma_student_url
+      - selma_enrolment_url
+
+  - title: EFTS Reporting
+    desc: Pro-rata EFTS calculation for NZ TEOs.
+    contents:
+      - selma_efts_report
+
+  - title: Reference / Lookup Tables
+    desc: Fetch code tables and reference data from SELMA.
+    contents:
+      - selma_ethnicities
+      - selma_countries
+      - selma_genders
+      - selma_titles
+      - selma_disabilities
+      - selma_disability_accesses
+      - selma_visa_types
+      - selma_nz_iwis
+      - selma_nz_residential_statuses
+      - selma_nz_disability_statuses
+      - selma_nz_disability_support_needs
+      - selma_secondary_schools
+      - selma_secondary_quals
+      - selma_previous_activities
+      - selma_student_statuses
+      - selma_contact_types
+      - selma_contact_statuses
+      - selma_org_types
+      - selma_address_types
+      - selma_enr_status_codes
+      - selma_withdrawal_reason_codes
+      - selma_withdrawal_codes
+      - selma_withdrawal_status_codes
+      - selma_wish_to_studies
+
+  - title: MCP Server
+    desc: >
+      Ask Claude about your SELMA data via the Model Context Protocol.
+      See `vignette("mcp-examples")` for usage walkthroughs.
+    contents:
+      - selma_mcp
+
+  - title: Constants
+    desc: Status codes, funded status groups, and funding source codes.
+    contents:
+      - selma_status_codes
+      - selma_funded_statuses
+      - selma_funding_sources
+      - SELMA_FUNDING_LABELS

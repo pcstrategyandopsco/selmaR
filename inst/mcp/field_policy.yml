@@ -1,0 +1,155 @@
+# selmaR MCP Server — Default PII Field Policy
+#
+# Defines which fields are exposed per entity type.
+# Three modes:
+#   allow  — only listed fields pass through (whitelist)
+#   redact — listed fields replaced with [REDACTED]
+#   all    — no restrictions (for lookup tables with no PII)
+#
+# To override: set SELMAR_FIELD_POLICY env var to your custom YAML path,
+# or place a field_policy.yml in the working directory.
+
+students:
+  mode: allow
+  fields:
+    - id
+    - student_status
+    - title
+    - gender
+    - nationality
+    - ethnicity1
+    - ethnicity2
+    - ethnicity3
+    - nz_residential_status
+    - visa_type
+    - third_party_id1
+    - third_party_id2
+    - organisation
+    - created_at
+    - updated_at
+  # Hidden: surname, forename, preferredname, email1, email2,
+  #         mobilephone, homephone, workphone, dob, nsn,
+  #         passport_number, visa_number
+
+enrolments:
+  mode: allow
+  fields:
+    - id
+    - student_id
+    - intake_id
+    - enrstatus
+    - enrtype
+    - enrolmentdate
+    - withdrawaldate
+    - withdrawalreason
+    - completiondate
+    - fundingsource
+    - fundingcategory
+    - created_at
+    - updated_at
+
+components:
+  mode: allow
+  fields:
+    - compenrid
+    - compid
+    - enrolid
+    - studentid
+    - compenrstartdate
+    - compenrenddate
+    - compenrstatus
+    - compenrefts
+    - compenrsource
+    - compenrfundingcategory
+    - compname
+    - compresult
+
+intakes:
+  mode: allow
+  fields:
+    - intakeid
+    - progid
+    - intakename
+    - intakestartdate
+    - intakeenddate
+    - intakestatus
+    - capacity
+    - enrolment_count
+    - campus
+
+programmes:
+  mode: allow
+  fields:
+    - progid
+    - progname
+    - progstatus
+    - proglevel
+    - progefts
+    - progtype
+    - nzqa_id
+    - duration
+    - delivery_mode
+
+contacts:
+  mode: allow
+  fields:
+    - id
+    - contact_type
+    - organisation
+    - created_at
+  # Hidden: surname, forename, email, phone, mobile
+
+addresses:
+  mode: allow
+  fields:
+    - addressid
+    - addresstype
+    - city
+    - region
+    - country
+    - postcode
+  # Hidden: street, suburb (too specific)
+
+notes:
+  mode: allow
+  fields:
+    - noteid
+    - student_id
+    - enrolmentid
+    - notetype
+    - notearea
+    - confidential
+    - created_at
+  # Hidden: note1 (free text may contain PII)
+
+organisations:
+  mode: allow
+  fields:
+    - id
+    - name
+    - legalname
+    - orgtype
+    - country
+    - registration_number
+
+classes:
+  mode: allow
+  fields:
+    - id
+    - class_name
+    - capacity
+    - startdate
+    - enddate
+    - campusid
+
+# Lookup entities -- no PII
+campuses:
+  mode: all
+ethnicities:
+  mode: all
+countries:
+  mode: all
+genders:
+  mode: all
+titles:
+  mode: all
