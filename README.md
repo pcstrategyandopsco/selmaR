@@ -97,7 +97,7 @@ Add the server to your Claude Code settings
     "selmaR": {
       "command": "Rscript",
       "args": ["/path/to/selmaR/inst/mcp/server.R"],
-      "cwd": "/path/to/project/with/config.yml"
+      "cwd": "/path/to/directory/containing/config.yml"
     }
   }
 }

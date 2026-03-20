@@ -58,7 +58,7 @@ In your Claude Code settings (`~/.claude/settings.json` or project-level
     "selmaR": {
       "command": "Rscript",
       "args": ["/path/to/selmaR/inst/mcp/server.R"],
-      "cwd": "/path/to/project/with/config.yml"
+      "cwd": "/path/to/directory/containing/config.yml"
     }
   }
 }
@@ -90,9 +90,9 @@ Claude calls `list_entities`:
 ```
 Available entities (15):
 
-[{"entity":"students","description":"Student records (demographics, status, visa, nationality)","policy_mode":"allow","policy_fields":15},
- {"entity":"enrolments","description":"Enrolment records linking students to intakes (status, dates, funding)","policy_mode":"allow","policy_fields":13},
- {"entity":"intakes","description":"Intake/cohort definitions (programme, dates, capacity)","policy_mode":"allow","policy_fields":9},
+[{"entity":"students","description":"Student records (demographics, status, visa, nationality)","policy_mode":"allow","policy_fields":22},
+ {"entity":"enrolments","description":"Enrolment records linking students to intakes (status, dates, funding)","policy_mode":"allow","policy_fields":22},
+ {"entity":"intakes","description":"Intake/cohort definitions (programme, dates, capacity)","policy_mode":"allow","policy_fields":16},
  ...]
 ```
 
@@ -108,13 +108,13 @@ Then Claude calls `describe_entity` to understand the data shape:
 ```
 Entity: students
 Rows: 1,247
-Columns: 15 (policy: allow)
+Columns: 22 (policy: allow)
 
 Column summaries:
 [{"column":"id","type":"character","n_missing":0,"n_unique":1247},
- {"column":"student_status","type":"character","n_missing":0,"n_unique":4,"top_values":"Active (892), Graduated (231), Withdrawn (98), Deferred (26)"},
+ {"column":"status","type":"character","n_missing":0,"n_unique":4,"top_values":"Active (892), Graduated (231), Withdrawn (98), Deferred (26)"},
  {"column":"gender","type":"character","n_missing":12,"n_unique":3,"top_values":"Female (687), Male (543), Non-binary (5)"},
- {"column":"nationality","type":"character","n_missing":3,"n_unique":42,"top_values":"New Zealand (645), India (187), China (89)"},
+ {"column":"countryofbirth","type":"character","n_missing":3,"n_unique":42,"top_values":"New Zealand (645), India (187), China (89)"},
  ...]
 ```
 
@@ -160,19 +160,19 @@ For a deeper drill-down, Claude uses `execute_r`:
 ```json
 {"jsonrpc":"2.0","id":4,"method":"tools/call",
  "params":{"name":"execute_r","arguments":{
-  "code":"pipeline <- selma_student_pipeline(selma_enrolments(), selma_students(), selma_intakes())\npipeline |> filter(enrstatus %in% SELMA_FUNDED_STATUSES) |> count(intakename, enrstatus) |> arrange(desc(n)) |> head(20)"
+  "code":"pipeline <- selma_student_pipeline(selma_enrolments(), selma_students(), selma_intakes())\npipeline |> filter(enrstatus %in% SELMA_FUNDED_STATUSES) |> count(intake_name, enrstatus) |> arrange(desc(n)) |> head(20)"
  }}}
 ```
 
 **Response:**
 
 ```
-[enrolments: 2,834 rows x 13 cols]
-[students: 1,247 rows x 15 cols]
-[intakes: 156 rows x 9 cols]
+[enrolments: 2,834 rows x 22 cols]
+[students: 1,247 rows x 22 cols]
+[intakes: 156 rows x 16 cols]
 
 # A tibble: 20 × 3
-   intakename                     enrstatus     n
+   intake_name                     enrstatus     n
    <chr>                          <chr>     <int>
  1 NZ Diploma in Web Dev 2025-S1  C            45
  2 NZ Cert in IT Essentials 25-Q1 C            38

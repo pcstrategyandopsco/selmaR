@@ -8,6 +8,9 @@ selmaR is an R client for the [SELMA](https://selma.co.nz/) student
 management system API, built for analysts at New Zealand PTEs and TEOs
 who want to turn their student data into insights.
 
+**[Read the full documentation
+→](https://pcstrategyandopsco.github.io/selmaR/)**
+
 ## Why selmaR?
 
 - **Student reports in 5 lines of R** — connect, fetch, join, filter,
@@ -99,7 +102,7 @@ or project `.claude/settings.json`):
     "selmaR": {
       "command": "Rscript",
       "args": ["/path/to/selmaR/inst/mcp/server.R"],
-      "cwd": "/path/to/project/with/config.yml"
+      "cwd": "/path/to/directory/containing/config.yml"
     }
   }
 }

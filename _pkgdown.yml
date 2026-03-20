@@ -51,6 +51,7 @@ reference:
     contents:
       - selma_connect
       - selma_disconnect
+      - selma_get_connection
 
   - title: Core Data Fetching
     desc: Fetch the main SELMA entities. Most accept optional filter parameters.

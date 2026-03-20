@@ -89,22 +89,49 @@ pseudonymise_column <- function(values, prefix = "S") {
 }
 
 ID_COLUMN_PATTERNS <- list(
-  list(pattern = "^(id|student_id|studentid)$", prefix = "S"),
-  list(pattern = "^nsn$",                       prefix = "N"),
-  list(pattern = "^(contact_id|contactid)$",    prefix = "C"),
-  list(pattern = "^(enrolment_id|enrolid|enrol_id)$", prefix = "E"),
-  list(pattern = "^(intake_id|intakeid)$",      prefix = "I"),
-  list(pattern = "^(compenrid)$",               prefix = "CE"),
-  list(pattern = "^(compid)$",                  prefix = "CP"),
-  list(pattern = "^(progid)$",                  prefix = "P")
+  list(pattern = "^(student_id|studentid)$",             prefix = "S"),
+  list(pattern = "^nsn$",                                prefix = "N"),
+  list(pattern = "^(contact_id|contactid)$",             prefix = "C"),
+  list(pattern = "^(enrolment_id|enrolid|enrol_id)$",    prefix = "E"),
+  list(pattern = "^(intake_id|intakeid)$",               prefix = "I"),
+  list(pattern = "^(compenrid)$",                        prefix = "CE"),
+  list(pattern = "^(compid)$",                           prefix = "CP"),
+  list(pattern = "^(progid|prog_id|interested_progid)$", prefix = "P"),
+  list(pattern = "^(campus_id|campusid)$",               prefix = "CA"),
+  list(pattern = "^(strand_id)$",                        prefix = "ST"),
+  list(pattern = "^(orgid)$",                            prefix = "O"),
+  list(pattern = "^(parentid)$",                         prefix = "E"),
+  list(pattern = "^(interested_intakeid)$",              prefix = "I"),
+  list(pattern = "^(addressid)$",                        prefix = "A"),
+  list(pattern = "^(noteid)$",                           prefix = "NT"),
+  list(pattern = "^(enrolmentid)$",                      prefix = "E")
+)
+
+ENTITY_ID_PREFIX <- c(
+  students = "S", enrolments = "E", contacts = "C",
+  intakes = "I", programmes = "P", components = "CE",
+  organisations = "O", classes = "CL", campuses = "CA",
+  addresses = "A", notes = "NT"
 )
 
 .mcp_config <- list(expose_real_ids = FALSE)
 
-apply_pseudonymisation <- function(df) {
+apply_pseudonymisation <- function(df, entity_name = NULL) {
   if (.mcp_config$expose_real_ids) return(df)
   for (col in names(df)) {
     col_lower <- tolower(col)
+
+    # Handle the ambiguous "id" column using entity context
+    if (col_lower == "id") {
+      prefix <- if (!is.null(entity_name) && entity_name %in% names(ENTITY_ID_PREFIX)) {
+        ENTITY_ID_PREFIX[[entity_name]]
+      } else {
+        "S"  # fallback
+      }
+      df[[col]] <- pseudonymise_column(as.character(df[[col]]), prefix)
+      next
+    }
+
     for (pat in ID_COLUMN_PATTERNS) {
       if (grepl(pat$pattern, col_lower)) {
         df[[col]] <- pseudonymise_column(as.character(df[[col]]), pat$prefix)
@@ -163,26 +190,47 @@ test_that("apply_pseudonymisation handles data frames", {
     name = c("Alice", "Bob"),
     stringsAsFactors = FALSE
   )
-  result <- apply_pseudonymisation(df)
+  result <- apply_pseudonymisation(df, entity_name = "students")
   expect_match(result$id[1], "^S-")
   expect_match(result$student_id[1], "^S-")
   expect_match(result$nsn[1], "^N-")
   expect_equal(result$name[1], "Alice")  # non-ID columns unchanged
 })
 
-test_that("Joins work with pseudonymised IDs", {
+test_that("Entity-aware id column uses correct prefix", {
+  df <- data.frame(id = c("100", "200"), stringsAsFactors = FALSE)
+  # students.id gets S- prefix
+  s_result <- apply_pseudonymisation(df, entity_name = "students")
+  expect_match(s_result$id[1], "^S-")
+  # enrolments.id gets E- prefix
+  e_result <- apply_pseudonymisation(df, entity_name = "enrolments")
+  expect_match(e_result$id[1], "^E-")
+  # Same value, different prefix = different hash
+  expect_true(s_result$id[1] != e_result$id[1])
+})
+
+test_that("Cross-entity joins work: students.id = enrolments.student_id", {
   df1 <- data.frame(id = c("1", "2"), value = c("a", "b"), stringsAsFactors = FALSE)
   df2 <- data.frame(student_id = c("1", "2"), score = c(90, 85), stringsAsFactors = FALSE)
-  p1 <- apply_pseudonymisation(df1)
-  p2 <- apply_pseudonymisation(df2)
-  # student_id "1" should match id "1" because same seed+value+prefix
+  p1 <- apply_pseudonymisation(df1, entity_name = "students")
+  p2 <- apply_pseudonymisation(df2, entity_name = "enrolments")
+  # students.id "1" should match enrolments.student_id "1" (both S- prefix)
   expect_equal(p1$id[1], p2$student_id[1])
+})
+
+test_that("Cross-entity joins work: enrolments.id = components.enrolid", {
+  df1 <- data.frame(id = c("100", "200"), stringsAsFactors = FALSE)
+  df2 <- data.frame(enrolid = c("100", "200"), stringsAsFactors = FALSE)
+  p1 <- apply_pseudonymisation(df1, entity_name = "enrolments")
+  p2 <- apply_pseudonymisation(df2, entity_name = "components")
+  # enrolments.id "100" should match components.enrolid "100" (both E- prefix)
+  expect_equal(p1$id[1], p2$enrolid[1])
 })
 
 test_that("expose_real_ids disables pseudonymisation", {
   .mcp_config[["expose_real_ids"]] <- TRUE
   df <- data.frame(id = "12345", stringsAsFactors = FALSE)
-  result <- apply_pseudonymisation(df)
+  result <- apply_pseudonymisation(df, entity_name = "students")
   expect_equal(result$id, "12345")
   .mcp_config[["expose_real_ids"]] <- FALSE
 })
@@ -355,7 +403,7 @@ cat("\nLayer 4: PII Field Policy\n")
 .mcp_policy <- list(
   students = list(
     mode = "allow",
-    fields = c("id", "student_status", "gender", "nationality")
+    fields = c("id", "status", "gender", "countryofbirth")
   ),
   notes = list(
     mode = "redact",
@@ -389,12 +437,12 @@ apply_field_policy <- function(df, entity_name) {
 test_that("allow mode keeps only listed fields", {
   df <- data.frame(
     id = "1", surname = "Smith", forename = "John",
-    student_status = "Active", gender = "M", nationality = "NZ",
+    status = "Active", gender = "M", countryofbirth = "NZ",
     email1 = "john@example.com", dob = "1990-01-01",
     stringsAsFactors = FALSE
   )
   result <- apply_field_policy(df, "students")
-  expect_equal(sort(names(result)), sort(c("id", "student_status", "gender", "nationality")))
+  expect_equal(sort(names(result)), sort(c("id", "status", "gender", "countryofbirth")))
   # PII fields should be gone
   expect_true(!"surname" %in% names(result))
   expect_true(!"email1" %in% names(result))
@@ -426,7 +474,7 @@ test_that("Unknown entity passes through (no policy)", {
 
 test_that("New API fields are excluded by allow mode", {
   df <- data.frame(
-    id = "1", student_status = "Active",
+    id = "1", status = "Active",
     new_secret_field = "sensitive data",
     stringsAsFactors = FALSE
   )
@@ -723,14 +771,14 @@ test_that("All registry fetch functions exist in selmaR", {
 cat("\nIntegration: Combined Layers\n")
 
 test_that("Full pipeline: fetch + policy + pseudonymise + scan", {
-  # Simulate the full pipeline
+  # Simulate the full pipeline with actual API field names
   raw_df <- data.frame(
     id = c("1001", "1002"),
     surname = c("Smith", "Nguyen"),
     forename = c("John", "Mai"),
-    student_status = c("Active", "Active"),
+    status = c("Active", "Active"),
     gender = c("M", "F"),
-    nationality = c("NZ", "VN"),
+    countryofbirth = c("NZ", "VN"),
     email1 = c("john.smith@test.com", "mai.nguyen@test.com"),
     dob = c("1990-05-15", "1995-08-22"),
     nsn = c("123456789", "987654321"),
@@ -748,15 +796,15 @@ test_that("Full pipeline: fetch + policy + pseudonymise + scan", {
   # Apply field policy (students: allow mode)
   .mcp_policy$students <- list(
     mode = "allow",
-    fields = c("id", "student_status", "gender", "nationality")
+    fields = c("id", "status", "gender", "countryofbirth")
   )
   filtered <- apply_field_policy(raw_df, "students")
   expect_true(!"surname" %in% names(filtered))
   expect_true(!"email1" %in% names(filtered))
   expect_true(!"nsn" %in% names(filtered))
 
-  # Apply pseudonymisation
-  pseudonymised <- apply_pseudonymisation(filtered)
+  # Apply pseudonymisation (entity-aware)
+  pseudonymised <- apply_pseudonymisation(filtered, entity_name = "students")
   expect_match(pseudonymised$id[1], "^S-")
 
   # Simulate output text that might leak PII

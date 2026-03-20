@@ -113,12 +113,13 @@ selma_disconnect <- function() {
 #' Get the active SELMA connection
 #'
 #' Returns the stored connection, or errors with a helpful message if
-#' no connection exists. Used internally by all fetch functions.
+#' no connection exists. Used internally by all fetch functions and the
+#' MCP server.
 #'
 #' @param con Optional explicit connection. If `NULL`, uses the stored
 #'   connection from [selma_connect()].
 #' @return A `selma_connection` object.
-#' @noRd
+#' @export
 selma_get_connection <- function(con = NULL) {
   if (!is.null(con)) {
     if (!inherits(con, "selma_connection")) {

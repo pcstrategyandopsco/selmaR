@@ -15,7 +15,7 @@ or project `.claude/settings.json`):
         "selmaR": {
           "command": "Rscript",
           "args": ["<path-to-selmaR>/inst/mcp/server.R"],
-          "cwd": "<path-to-project-with-config.yml>"
+          "cwd": "<directory-containing-config.yml>"
         }
       }
     }

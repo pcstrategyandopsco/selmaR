@@ -8,6 +8,8 @@ Connect to a SELMA instance.
   : Connect to the SELMA API
 - [`selma_disconnect()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_disconnect.md)
   : Disconnect from the SELMA API
+- [`selma_get_connection()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_get_connection.md)
+  : Get the active SELMA connection
 
 ## Core Data Fetching
 

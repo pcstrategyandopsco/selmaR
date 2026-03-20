@@ -118,7 +118,7 @@ project-level <code>.claude/settings.json</code>):</p>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>    <span class="dt">"selmaR"</span><span class="fu">:</span> <span class="fu">{</span></span>
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>      <span class="dt">"command"</span><span class="fu">:</span> <span class="st">"Rscript"</span><span class="fu">,</span></span>
 <span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>      <span class="dt">"args"</span><span class="fu">:</span> <span class="ot">[</span><span class="st">"/path/to/selmaR/inst/mcp/server.R"</span><span class="ot">]</span><span class="fu">,</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>      <span class="dt">"cwd"</span><span class="fu">:</span> <span class="st">"/path/to/project/with/config.yml"</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>      <span class="dt">"cwd"</span><span class="fu">:</span> <span class="st">"/path/to/directory/containing/config.yml"</span></span>
 <span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>    <span class="fu">}</span></span>
 <span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="fu">}</span></span>
 <span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
@@ -142,9 +142,9 @@ Tools: list_entities, describe_entity, get_entity_summary, get_efts_report, exec
 <p><strong>Response:</strong></p>
 <pre><code>Available entities (15):
 
-[{"entity":"students","description":"Student records (demographics, status, visa, nationality)","policy_mode":"allow","policy_fields":15},
- {"entity":"enrolments","description":"Enrolment records linking students to intakes (status, dates, funding)","policy_mode":"allow","policy_fields":13},
- {"entity":"intakes","description":"Intake/cohort definitions (programme, dates, capacity)","policy_mode":"allow","policy_fields":9},
+[{"entity":"students","description":"Student records (demographics, status, visa, nationality)","policy_mode":"allow","policy_fields":22},
+ {"entity":"enrolments","description":"Enrolment records linking students to intakes (status, dates, funding)","policy_mode":"allow","policy_fields":22},
+ {"entity":"intakes","description":"Intake/cohort definitions (programme, dates, capacity)","policy_mode":"allow","policy_fields":16},
  ...]</code></pre>
 <p>Then Claude calls <code>describe_entity</code> to understand the data
 shape:</p>
@@ -153,13 +153,13 @@ shape:</p>
 <p><strong>Response:</strong></p>
 <pre><code>Entity: students
 Rows: 1,247
-Columns: 15 (policy: allow)
+Columns: 22 (policy: allow)
 
 Column summaries:
 [{"column":"id","type":"character","n_missing":0,"n_unique":1247},
- {"column":"student_status","type":"character","n_missing":0,"n_unique":4,"top_values":"Active (892), Graduated (231), Withdrawn (98), Deferred (26)"},
+ {"column":"status","type":"character","n_missing":0,"n_unique":4,"top_values":"Active (892), Graduated (231), Withdrawn (98), Deferred (26)"},
  {"column":"gender","type":"character","n_missing":12,"n_unique":3,"top_values":"Female (687), Male (543), Non-binary (5)"},
- {"column":"nationality","type":"character","n_missing":3,"n_unique":42,"top_values":"New Zealand (645), India (187), China (89)"},
+ {"column":"countryofbirth","type":"character","n_missing":3,"n_unique":42,"top_values":"New Zealand (645), India (187), China (89)"},
  ...]</code></pre>
 <p>Note: PII fields (surname, forename, email, DOB, NSN) are not present
 — the field policy filters them before they reach Claude. IDs are
@@ -194,15 +194,15 @@ Group counts (top 30):
 <p>For a deeper drill-down, Claude uses <code>execute_r</code>:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">{</span><span class="dt">"jsonrpc"</span><span class="fu">:</span><span class="st">"2.0"</span><span class="fu">,</span><span class="dt">"id"</span><span class="fu">:</span><span class="dv">4</span><span class="fu">,</span><span class="dt">"method"</span><span class="fu">:</span><span class="st">"tools/call"</span><span class="fu">,</span></span>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a> <span class="dt">"params"</span><span class="fu">:{</span><span class="dt">"name"</span><span class="fu">:</span><span class="st">"execute_r"</span><span class="fu">,</span><span class="dt">"arguments"</span><span class="fu">:{</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="dt">"code"</span><span class="fu">:</span><span class="st">"pipeline &lt;- selma_student_pipeline(selma_enrolments(), selma_students(), selma_intakes())</span><span class="ch">\n</span><span class="st">pipeline |&gt; filter(enrstatus %in% SELMA_FUNDED_STATUSES) |&gt; count(intakename, enrstatus) |&gt; arrange(desc(n)) |&gt; head(20)"</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="dt">"code"</span><span class="fu">:</span><span class="st">"pipeline &lt;- selma_student_pipeline(selma_enrolments(), selma_students(), selma_intakes())</span><span class="ch">\n</span><span class="st">pipeline |&gt; filter(enrstatus %in% SELMA_FUNDED_STATUSES) |&gt; count(intake_name, enrstatus) |&gt; arrange(desc(n)) |&gt; head(20)"</span></span>
 <span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a> <span class="fu">}}}</span></span></code></pre></div>
 <p><strong>Response:</strong></p>
-<pre><code>[enrolments: 2,834 rows x 13 cols]
-[students: 1,247 rows x 15 cols]
-[intakes: 156 rows x 9 cols]
+<pre><code>[enrolments: 2,834 rows x 22 cols]
+[students: 1,247 rows x 22 cols]
+[intakes: 156 rows x 16 cols]
 
 # A tibble: 20 × 3
-   intakename                     enrstatus     n
+   intake_name                     enrstatus     n
    &lt;chr&gt;                          &lt;chr&gt;     &lt;int&gt;
  1 NZ Diploma in Web Dev 2025-S1  C            45
  2 NZ Cert in IT Essentials 25-Q1 C            38

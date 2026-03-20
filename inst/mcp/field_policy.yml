@@ -6,6 +6,9 @@
 #   redact — listed fields replaced with [REDACTED]
 #   all    — no restrictions (for lookup tables with no PII)
 #
+# Field names must match the actual SELMA API output after clean_names().
+# Verified against live API 2026-03-20.
+#
 # To override: set SELMAR_FIELD_POLICY env var to your custom YAML path,
 # or place a field_policy.yml in the working directory.
 
@@ -13,23 +16,32 @@ students:
   mode: allow
   fields:
     - id
-    - student_status
+    - status
     - title
     - gender
-    - nationality
+    - international
+    - citizenship
+    - residency
+    - residentialstatus
     - ethnicity1
     - ethnicity2
     - ethnicity3
-    - nz_residential_status
-    - visa_type
-    - third_party_id1
+    - ethnicity
+    - countryofbirth
+    - visatype
+    - feesfree
+    - prestudyactivity
+    - highpostschoolqual
+    - third_party_id
     - third_party_id2
     - organisation
-    - created_at
-    - updated_at
-  # Hidden: surname, forename, preferredname, email1, email2,
-  #         mobilephone, homephone, workphone, dob, nsn,
-  #         passport_number, visa_number
+    - interested_progid
+    - interested_intakeid
+  # Hidden: surname, forename, preferredname, middlename, initials,
+  #         email1, email2, mobilephone, secondaryphone, dob, nsn,
+  #         passportnumber, passportexpiry, visanumber, visaexpiry,
+  #         medicalcondition, medicallist, medinsurance, ird_number,
+  #         bank_acc, driver_licence, disability, disabilitydetails
 
 enrolments:
   mode: allow
@@ -38,66 +50,116 @@ enrolments:
     - student_id
     - intake_id
     - enrstatus
-    - enrtype
-    - enrolmentdate
-    - withdrawaldate
-    - withdrawalreason
-    - completiondate
+    - enrstartdate
+    - enrenddate
+    - enrstatusdate
+    - enrreturntype
+    - enrattendance
+    - completedsuccessfully
     - fundingsource
-    - fundingcategory
-    - created_at
-    - updated_at
+    - enrcompletiondate
+    - enrcompletiongrade
+    - enrqualcode
+    - enrwithdrawalreason
+    - enrwithdrawaldate
+    - enrfeesfree
+    - strand_id
+    - third_party_id
+    - percent_attendance
+    - percent_in_programme
+    - percent_progress
 
 components:
   mode: allow
   fields:
     - compenrid
     - compid
+    - parentid
     - enrolid
     - studentid
     - compenrstartdate
     - compenrenddate
+    - compenrduedate
     - compenrstatus
-    - compenrefts
+    - compenrreturntype
     - compenrsource
+    - compenrefts
+    - compenrfeetf
     - compenrfundingcategory
-    - compname
-    - compresult
+    - compenrresidency
+    - compenrattendance
+    - compenrgrade
+    - compenrcompletioncode
+    - compenrcompletiondate
+    - compenrextensiondate
+    - compenrwithdrawalreason
+    - compenrwithdrawaldate
+    - compenrfeepayingstatus
+    - comp_title
+    - comp_credit_fw
+    - comp_level_fw
+    - comp_code
+    - comp_version
+    - comp_type
+    - milestone
+    - createddate
+    - updateddate
+  # Hidden: compenrassessmentnote, userfieldchar*, userfielddate*,
+  #         userfieldbit*, userfieldint*, userfielddecimal*,
+  #         createdby, updatedby (usernames)
 
 intakes:
   mode: allow
   fields:
     - intakeid
+    - intakecode
+    - intakestatus
     - progid
-    - intakename
+    - campus_id
+    - intake_name
     - intakestartdate
     - intakeenddate
-    - intakestatus
-    - capacity
-    - enrolment_count
-    - campus
+    - available_spaces
+    - prog_ie_min_places
+    - prog_ie_max_places
+    - strand_id
+    - funding_source
+    - fees
+    - createddate
+    - updateddate
+  # Hidden: createdby, updatedby (usernames)
 
 programmes:
   mode: allow
   fields:
     - progid
-    - progname
-    - progstatus
-    - proglevel
+    - progcode
+    - progversion
+    - progtitle
+    - progdescription
+    - progcrediteq
+    - progleveleq
     - progefts
-    - progtype
-    - nzqa_id
-    - duration
-    - delivery_mode
+    - progstatus
+    - proglength
+    - proglengthunits
+    - ygtype
+    - nzqacode
+    - progress_type
+    - createddate
+    - updateddate
+  # Hidden: createdby, updatedby (usernames)
 
 contacts:
   mode: allow
   fields:
     - id
-    - contact_type
-    - organisation
-    - created_at
-  # Hidden: surname, forename, email, phone, mobile
+    - type_2
+    - gender
+    - status
+    - createddate
+  # Hidden: surname, forename, preferredname, middlename, initials,
+  #         email1, mobilephone, secondaryphone, workphone, dob, otherid
 
 addresses:
   mode: allow
@@ -105,10 +167,17 @@ addresses:
     - addressid
     - addresstype
     - city
+    - postcode
     - region
     - country
-    - postcode
-  # Hidden: street, suburb (too specific)
+    - validfrom
+    - validto
+    - studentid
+    - orgid
+    - contactid
+    - createddate
+    - updateddate
+  # Hidden: street, suburb (too specific for PII)
 
 notes:
   mode: allow
@@ -119,8 +188,8 @@ notes:
     - notetype
     - notearea
     - confidential
-    - created_at
-  # Hidden: note1 (free text may contain PII)
+    - createddate
+  # Hidden: note1 (free text may contain PII), createdby (username)
 
 organisations:
   mode: allow
@@ -131,6 +200,7 @@ organisations:
     - orgtype
     - country
     - registration_number
+  # Note: currently returns 0 rows in production
 
 classes:
   mode: allow
@@ -138,9 +208,13 @@ classes:
     - id
     - class_name
     - capacity
+    - enrolment_count
     - startdate
     - enddate
     - campusid
+    - active
+    - createddate
+  # Hidden: description (may contain PII), otherid, createdby
 
 # Lookup entities -- no PII
 campuses:

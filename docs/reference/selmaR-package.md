@@ -11,6 +11,8 @@ calculation for New Zealand TEOs.
 
 Useful links:
 
+- <https://pcstrategyandopsco.github.io/selmaR/>
+
 - <https://github.com/pcstrategyandopsco/selmaR>
 
 - Report bugs at <https://github.com/pcstrategyandopsco/selmaR/issues>

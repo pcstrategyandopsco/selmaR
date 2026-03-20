@@ -23,7 +23,7 @@
 #       "selmaR": {
 #         "command": "Rscript",
 #         "args": ["/path/to/selmaR/inst/mcp/server.R"],
-#         "cwd": "/path/to/project/with/config.yml"
+#         "cwd": "/path/to/directory/containing/config.yml"
 #       }
 #     }
 #   }
@@ -132,15 +132,35 @@ tryCatch({
 .mcp_seed <- as.character(sample.int(1e9, 1))
 
 # Column name patterns → prefix for pseudonymised IDs
+# IMPORTANT: The same underlying ID must always get the same prefix regardless
+# of which entity it appears in, otherwise cross-entity joins break.
+# The "id" column is ambiguous (could be student, enrolment, contact, etc.)
+# so we handle it per-entity in apply_pseudonymisation().
 ID_COLUMN_PATTERNS <- list(
-  list(pattern = "^(id|student_id|studentid)$", prefix = "S"),
-  list(pattern = "^nsn$",                       prefix = "N"),
-  list(pattern = "^(contact_id|contactid)$",    prefix = "C"),
-  list(pattern = "^(enrolment_id|enrolid|enrol_id)$", prefix = "E"),
-  list(pattern = "^(intake_id|intakeid)$",      prefix = "I"),
-  list(pattern = "^(compenrid)$",               prefix = "CE"),
-  list(pattern = "^(compid)$",                  prefix = "CP"),
-  list(pattern = "^(progid)$",                  prefix = "P")
+  list(pattern = "^(student_id|studentid)$",             prefix = "S"),
+  list(pattern = "^nsn$",                                prefix = "N"),
+  list(pattern = "^(contact_id|contactid)$",             prefix = "C"),
+  list(pattern = "^(enrolment_id|enrolid|enrol_id)$",    prefix = "E"),
+  list(pattern = "^(intake_id|intakeid)$",               prefix = "I"),
+  list(pattern = "^(compenrid)$",                        prefix = "CE"),
+  list(pattern = "^(compid)$",                           prefix = "CP"),
+  list(pattern = "^(progid|prog_id|interested_progid)$", prefix = "P"),
+  list(pattern = "^(campus_id|campusid)$",               prefix = "CA"),
+  list(pattern = "^(strand_id)$",                        prefix = "ST"),
+  list(pattern = "^(orgid)$",                            prefix = "O"),
+  list(pattern = "^(parentid)$",                         prefix = "E"),
+  list(pattern = "^(interested_intakeid)$",              prefix = "I"),
+  list(pattern = "^(addressid)$",                        prefix = "A"),
+  list(pattern = "^(noteid)$",                           prefix = "NT"),
+  list(pattern = "^(enrolmentid)$",                      prefix = "E")
+)
+
+# Maps entity name -> prefix for the generic "id" column
+ENTITY_ID_PREFIX <- c(
+  students = "S", enrolments = "E", contacts = "C",
+  intakes = "I", programmes = "P", components = "CE",
+  organisations = "O", classes = "CL", campuses = "CA",
+  addresses = "A", notes = "NT"
 )
 
 pseudonymise_id <- function(id, prefix = "S") {
@@ -154,10 +174,22 @@ pseudonymise_column <- function(values, prefix = "S") {
          USE.NAMES = FALSE)
 }
 
-apply_pseudonymisation <- function(df) {
+apply_pseudonymisation <- function(df, entity_name = NULL) {
   if (.mcp_config$expose_real_ids) return(df)
   for (col in names(df)) {
     col_lower <- tolower(col)
+
+    # Handle the ambiguous "id" column using entity context
+    if (col_lower == "id") {
+      prefix <- if (!is.null(entity_name) && entity_name %in% names(ENTITY_ID_PREFIX)) {
+        ENTITY_ID_PREFIX[[entity_name]]
+      } else {
+        "S"  # fallback
+      }
+      df[[col]] <- pseudonymise_column(as.character(df[[col]]), prefix)
+      next
+    }
+
     for (pat in ID_COLUMN_PATTERNS) {
       if (grepl(pat$pattern, col_lower)) {
         df[[col]] <- pseudonymise_column(as.character(df[[col]]), pat$prefix)
@@ -582,8 +614,8 @@ get_cached_entity <- function(entity_name) {
   # Apply field policy
   filtered_df <- apply_field_policy(raw_df, entity_name)
 
-  # Apply pseudonymisation
-  filtered_df <- apply_pseudonymisation(filtered_df)
+  # Apply pseudonymisation (entity-aware for "id" column)
+  filtered_df <- apply_pseudonymisation(filtered_df, entity_name)
 
   # Cache the filtered result
   assign(entity_name, filtered_df, envir = .entity_cache)
@@ -796,7 +828,7 @@ mcp_tools <- list(
       "Execute R code in a sandboxed persistent workspace. ",
       "Available: dplyr, tidyr, ggplot2, lubridate, scales. ",
       "Use selma_students(), selma_enrolments(), etc. to load policy-filtered data. ",
-      "Variables persist between calls. 30-second timeout. ",
+      "Variables persist between calls. 60-second compute timeout (data loading is separate). ",
       "Code is inspected before execution — namespace access (::) and I/O functions are blocked."
     ),
     inputSchema = list(
@@ -1172,12 +1204,50 @@ handle_execute_r <- function(args) {
 
   mcp_log("execute_r code: ", substr(code, 1, 200))
 
+  # Pre-warm: detect entity fetch calls in the code and load data BEFORE
+
+  # the execution timeout starts. API fetches can take minutes for large
+  # entities and should not be subject to the compute timeout.
+  entity_pattern <- "selma_(students|enrolments|intakes|components|programmes|contacts|addresses|notes|organisations|classes|campuses|get_entity)"
+  entity_refs <- stringr::str_extract_all(code, entity_pattern)[[1]]
+  if (length(entity_refs) > 0) {
+    # Map function names to entity names
+    fn_to_entity <- c(
+      selma_students = "students", selma_enrolments = "enrolments",
+      selma_intakes = "intakes", selma_components = "components",
+      selma_programmes = "programmes", selma_contacts = "contacts",
+      selma_addresses = "addresses", selma_notes = "notes",
+      selma_organisations = "organisations", selma_classes = "classes",
+      selma_campuses = "campuses"
+    )
+    entities_needed <- unique(na.omit(fn_to_entity[entity_refs]))
+    uncached <- entities_needed[!vapply(entities_needed, function(e) {
+      exists(e, envir = .entity_cache)
+    }, logical(1))]
+
+    if (length(uncached) > 0) {
+      send_notification("notifications/message", list(
+        level = "info",
+        data = paste0("Loading data from SELMA API: ",
+                      paste(uncached, collapse = ", "),
+                      ". This may take a moment for large entities...")
+      ))
+      for (ent in uncached) {
+        tryCatch({
+          get_cached_entity(ent)
+        }, error = function(e) {
+          mcp_log("Pre-warm failed for ", ent, ": ", conditionMessage(e))
+        })
+      }
+    }
+  }
+
   .res <- new.env(parent = emptyenv())
   .res$val <- NULL
   .res$output <- character(0)
   .res$messages <- character(0)
 
-  EXEC_TIMEOUT <- 30  # seconds
+  EXEC_TIMEOUT <- 60  # seconds (compute only — data fetching happens above)
 
   eval_result <- tryCatch(
     withCallingHandlers(
@@ -1392,6 +1462,12 @@ local({
 SERVER_INSTRUCTIONS <- paste0(
   "selmaR MCP server — SELMA student management system data for NZ PTEs/TEOs.\n",
   "Output directory for charts: ", MCP_OUTPUT_DIR, "\n\n",
+  "TOOL DISCOVERY\n",
+  "This server provides 7 tools: auth_status, list_entities, search_entities,\n",
+  "describe_entity, get_entity_summary, get_efts_report, execute_r.\n",
+  "If your tool loader uses deferred/paginated discovery, ensure ALL 7 are loaded.\n",
+  "Search specifically: \"selmaR execute_r get_entity_summary\" to surface tools\n",
+  "that may be missed by a broad category search.\n\n",
   "SECURITY\n",
   "- PII field filtering is active. Some fields (names, emails, phones, DOB) are\n",
   "  redacted per the server's field policy. You will only see policy-allowed columns.\n",
@@ -1403,7 +1479,7 @@ SERVER_INSTRUCTIONS <- paste0(
   "2. describe_entity(\"students\") — check columns, row count, distributions\n",
   "3. get_entity_summary with filter_by/group_by — quick aggregate stats\n",
   "4. get_efts_report — EFTS funding analysis (no code needed)\n",
-  "5. execute_r — custom dplyr/ggplot2 analysis (30-second timeout)\n\n",
+  "5. execute_r — custom dplyr/ggplot2 analysis (data loading is automatic, 60-sec compute timeout)\n\n",
   "SELMA DATA MODEL\n",
   "Students enrol into Intakes (cohorts) via Enrolments.\n",
   "Each Enrolment contains Components (individual course units with EFTS values).\n",
@@ -1411,6 +1487,54 @@ SERVER_INSTRUCTIONS <- paste0(
   "  students --(student_id)--> enrolments --(intake_id)--> intakes --(progid)--> programmes\n",
   "                                |\n",
   "                          enrolments --(enrolid)--> components\n\n",
+  "JOIN KEYS (use these exact column names for joins)\n",
+  "- students.id = enrolments.student_id (also components.studentid)\n",
+  "- enrolments.id = components.enrolid (also components.parentid)\n",
+  "- enrolments.intake_id = intakes.intakeid\n",
+  "- intakes.progid = programmes.progid\n",
+  "- addresses.studentid = students.id\n",
+  "- notes.student_id = students.id, notes.enrolmentid = enrolments.id\n",
+  "- Or use the join helpers: selma_join_students(), selma_join_intakes(), etc.\n\n",
+  "ENTITY FIELDS (policy-filtered — only these columns are visible)\n",
+  "students: id, status, title, gender, international, citizenship, residency,\n",
+  "  residentialstatus, ethnicity1-3, ethnicity, countryofbirth, visatype, feesfree,\n",
+  "  prestudyactivity, highpostschoolqual, third_party_id, third_party_id2,\n",
+  "  organisation, interested_progid, interested_intakeid\n",
+  "enrolments: id, student_id, intake_id, enrstatus, enrstartdate, enrenddate,\n",
+  "  enrstatusdate, enrreturntype, enrattendance, completedsuccessfully,\n",
+  "  fundingsource, enrcompletiondate, enrcompletiongrade, enrqualcode,\n",
+  "  enrwithdrawalreason, enrwithdrawaldate, enrfeesfree, strand_id, third_party_id,\n",
+  "  percent_attendance, percent_in_programme, percent_progress\n",
+  "components: compenrid, compid, parentid, enrolid, studentid, compenrstartdate,\n",
+  "  compenrenddate, compenrduedate, compenrstatus, compenrreturntype, compenrsource,\n",
+  "  compenrefts, compenrfeetf, compenrfundingcategory, compenrresidency,\n",
+  "  compenrattendance, compenrgrade, compenrcompletioncode, compenrcompletiondate,\n",
+  "  compenrextensiondate, compenrwithdrawalreason, compenrwithdrawaldate,\n",
+  "  compenrfeepayingstatus, comp_title, comp_credit_fw, comp_level_fw, comp_code,\n",
+  "  comp_version, comp_type, milestone, createddate, updateddate\n",
+  "intakes: intakeid, intakecode, intakestatus, progid, campus_id, intake_name,\n",
+  "  intakestartdate, intakeenddate, available_spaces, prog_ie_min_places,\n",
+  "  prog_ie_max_places, strand_id, funding_source, fees, createddate, updateddate\n",
+  "programmes: progid, progcode, progversion, progtitle, progdescription, progcrediteq,\n",
+  "  progleveleq, progefts, progstatus, proglength, proglengthunits, ygtype,\n",
+  "  nzqacode, progress_type, createddate, updateddate\n",
+  "contacts: id, type_2, gender, status, createddate\n",
+  "addresses: addressid, addresstype, city, postcode, region, country, validfrom,\n",
+  "  validto, studentid, orgid, contactid, createddate, updateddate\n",
+  "notes: noteid, student_id, enrolmentid, notetype, notearea, confidential, createddate\n",
+  "classes: id, class_name, capacity, enrolment_count, startdate, enddate, campusid,\n",
+  "  active, createddate\n",
+  "campuses, ethnicities, countries, genders, titles: all fields (lookup tables)\n\n",
+  "KEY DATE FIELDS\n",
+  "- Enrolment start/end: enrolments.enrstartdate / enrenddate\n",
+  "- Withdrawal date: enrolments.enrwithdrawaldate\n",
+  "- Completion date: enrolments.enrcompletiondate\n",
+  "- Status change date: enrolments.enrstatusdate\n",
+  "- Component start/end: components.compenrstartdate / compenrenddate\n",
+  "- Component completion: components.compenrcompletiondate\n",
+  "- Intake start/end: intakes.intakestartdate / intakeenddate\n",
+  "- Record timestamps: *.createddate, *.updateddate (components, intakes, programmes)\n",
+  "- NOTE: students entity has NO creation/update date fields from the API\n\n",
   "WORKSPACE FUNCTIONS\n",
   "- selma_get_entity(\"students\") or selma_students() — fetch + policy-filter + cache\n",
   "- selma_enrolments(), selma_intakes(), selma_components(), selma_programmes()\n",
@@ -1419,14 +1543,20 @@ SERVER_INSTRUCTIONS <- paste0(
   "- selma_join_students(), selma_join_intakes(), selma_join_components(),\n",
   "  selma_join_programmes() — individual join helpers\n",
   "- Variables persist between execute_r calls\n\n",
-  "STATUS CODES (use these constants, do not hardcode strings)\n",
-  "- SELMA_STATUS_CONFIRMED = \"C\"\n",
-  "- SELMA_STATUS_COMPLETED = \"FC\"\n",
-  "- SELMA_STATUS_INCOMPLETE = \"FI\"\n",
-  "- SELMA_STATUS_WITHDRAWN = \"WR\"\n",
-  "- SELMA_STATUS_WITHDRAWN_SDR = \"WS\"\n",
-  "- SELMA_FUNDED_STATUSES = c(\"C\", \"FC\", \"FI\") — revenue-generating\n",
-  "- SELMA_ALL_FUNDED_STATUSES = c(\"C\", \"FC\", \"FI\", \"WR\", \"WS\") — includes withdrawn\n\n",
+  "ENROLMENT STATUS CODES (use these constants, do not hardcode strings)\n",
+  "- SELMA_STATUS_CONFIRMED   = \"C\"  — Currently enrolled, confirmed\n",
+  "- SELMA_STATUS_COMPLETED   = \"FC\" — Finished, completed successfully\n",
+  "- SELMA_STATUS_INCOMPLETE  = \"FI\" — Finished, did not complete\n",
+  "- SELMA_STATUS_WITHDRAWN   = \"WR\" — Withdrawn (after census, still funded)\n",
+  "- SELMA_STATUS_WITHDRAWN_SDR = \"WS\" — Withdrawn for SDR reporting\n",
+  "- SELMA_STATUS_EARLY_WITHDRAWN = \"ER\" — Early withdrawal (before census, not funded)\n",
+  "- SELMA_STATUS_DEFERRED    = \"D\"  — Deferred to a later intake\n",
+  "- SELMA_STATUS_CANCELLED   = \"X\"  — Cancelled (never started)\n",
+  "- SELMA_STATUS_PENDING     = \"P\"  — Pending / not yet confirmed\n\n",
+  "STATUS GROUPS\n",
+  "- SELMA_FUNDED_STATUSES     = c(\"C\", \"FC\", \"FI\") — revenue-generating\n",
+  "- SELMA_ALL_FUNDED_STATUSES = c(\"C\", \"FC\", \"FI\", \"WR\", \"WS\") — includes withdrawn (still funded)\n",
+  "- Withdrawal statuses: WR, WS, ER (use these for withdrawal queries, not pattern matching)\n\n",
   "FUNDING SOURCES\n",
   "- \"01\" = Government Funded\n",
   "- \"02\" = International Fee-Paying\n",
@@ -1438,7 +1568,7 @@ SERVER_INSTRUCTIONS <- paste0(
   "enrolments |> filter(enrstatus %in% SELMA_FUNDED_STATUSES)\n\n",
   "# Enrolment counts by programme\n",
   "pipeline <- selma_student_pipeline(selma_enrolments(), selma_students(), selma_intakes())\n",
-  "pipeline |> count(progname, enrstatus)\n\n",
+  "pipeline |> count(progtitle, enrstatus)\n\n",
   "# EFTS by funding source (use the dedicated tool instead of code)\n",
   "get_efts_report(year = 2025)\n\n",
   "CHARTING\n",
@@ -1597,6 +1727,16 @@ load_field_policy()
 
 tryCatch(
   {
+    # If cwd was set to a config file path instead of a directory, recover
+    cwd_basename <- basename(getwd())
+    if (grepl("\\.(yml|yaml)$", cwd_basename, ignore.case = TRUE)) {
+      config_path <- normalizePath(getwd(), mustWork = FALSE)
+      if (file.exists(config_path) && !dir.exists(config_path)) {
+        mcp_log("cwd appears to be a file path, using parent directory")
+        setwd(dirname(config_path))
+      }
+    }
+
     # Try cwd first, then package root for config.yml
     if (file.exists("config.yml")) {
       suppressMessages(selmaR::selma_connect(config_file = "config.yml"))

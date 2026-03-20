@@ -13,6 +13,7 @@ Provides a clean interface to the SELMA student management system REST API. Hand
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://pcstrategyandopsco.github.io/selmaR/}
   \item \url{https://github.com/pcstrategyandopsco/selmaR}
   \item Report bugs at \url{https://github.com/pcstrategyandopsco/selmaR/issues}
 }

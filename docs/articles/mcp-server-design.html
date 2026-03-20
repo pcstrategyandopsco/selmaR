@@ -177,37 +177,160 @@ cross the wire.</p>
 <tbody>
 <tr class="odd">
 <td>
-<code>id</code>, <code>student_id</code>,
-<code>studentid</code>
+<code>id</code> (entity-aware — see below)</td>
+<td>per entity</td>
+<td><code>S-a3f2c1b9</code></td>
+</tr>
+<tr class="even">
+<td>
+<code>student_id</code>, <code>studentid</code>
 </td>
 <td><code>S</code></td>
 <td><code>S-a3f2c1b9</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>nsn</code></td>
 <td><code>N</code></td>
 <td><code>N-7e4d2f1a</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>contact_id</code>, <code>contactid</code>
 </td>
 <td><code>C</code></td>
 <td><code>C-b8e3a5d2</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>
-<code>enrolment_id</code>, <code>enrolid</code>
+<code>enrolment_id</code>, <code>enrolid</code>,
+<code>enrol_id</code>
 </td>
 <td><code>E</code></td>
 <td><code>E-1c9f4b7e</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>intake_id</code>, <code>intakeid</code>
 </td>
 <td><code>I</code></td>
 <td><code>I-d2a8c3f6</code></td>
+</tr>
+<tr class="odd">
+<td><code>compenrid</code></td>
+<td><code>CE</code></td>
+<td><code>CE-5a8b3c2d</code></td>
+</tr>
+<tr class="even">
+<td><code>compid</code></td>
+<td><code>CP</code></td>
+<td><code>CP-9d1e4f7a</code></td>
+</tr>
+<tr class="odd">
+<td>
+<code>progid</code>, <code>prog_id</code>,
+<code>interested_progid</code>
+</td>
+<td><code>P</code></td>
+<td><code>P-2b6c8d1e</code></td>
+</tr>
+<tr class="even">
+<td>
+<code>campus_id</code>, <code>campusid</code>
+</td>
+<td><code>CA</code></td>
+<td><code>CA-4e7f1a3b</code></td>
+</tr>
+<tr class="odd">
+<td><code>strand_id</code></td>
+<td><code>ST</code></td>
+<td><code>ST-6a9c2d4e</code></td>
+</tr>
+<tr class="even">
+<td><code>orgid</code></td>
+<td><code>O</code></td>
+<td><code>O-8b1d3e5f</code></td>
+</tr>
+<tr class="odd">
+<td><code>parentid</code></td>
+<td><code>E</code></td>
+<td><code>E-3c5d7e9a</code></td>
+</tr>
+<tr class="even">
+<td><code>interested_intakeid</code></td>
+<td><code>I</code></td>
+<td><code>I-7a2b4c6d</code></td>
+</tr>
+<tr class="odd">
+<td><code>addressid</code></td>
+<td><code>A</code></td>
+<td><code>A-1e3f5a7b</code></td>
+</tr>
+<tr class="even">
+<td><code>noteid</code></td>
+<td><code>NT</code></td>
+<td><code>NT-9c2d4e6f</code></td>
+</tr>
+<tr class="odd">
+<td><code>enrolmentid</code></td>
+<td><code>E</code></td>
+<td><code>E-5a7b9c1d</code></td>
+</tr>
+</tbody>
+</table>
+<p>The generic <code>id</code> column is ambiguous — it appears in
+students, enrolments, contacts, and other entities. The server uses an
+<code>ENTITY_ID_PREFIX</code> lookup to assign the correct prefix based
+on which entity the data came from:</p>
+<table class="table">
+<thead><tr class="header">
+<th>Entity</th>
+<th>
+<code>id</code> prefix</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>students</td>
+<td><code>S</code></td>
+</tr>
+<tr class="even">
+<td>enrolments</td>
+<td><code>E</code></td>
+</tr>
+<tr class="odd">
+<td>contacts</td>
+<td><code>C</code></td>
+</tr>
+<tr class="even">
+<td>intakes</td>
+<td><code>I</code></td>
+</tr>
+<tr class="odd">
+<td>programmes</td>
+<td><code>P</code></td>
+</tr>
+<tr class="even">
+<td>components</td>
+<td><code>CE</code></td>
+</tr>
+<tr class="odd">
+<td>organisations</td>
+<td><code>O</code></td>
+</tr>
+<tr class="even">
+<td>classes</td>
+<td><code>CL</code></td>
+</tr>
+<tr class="odd">
+<td>campuses</td>
+<td><code>CA</code></td>
+</tr>
+<tr class="even">
+<td>addresses</td>
+<td><code>A</code></td>
+</tr>
+<tr class="odd">
+<td>notes</td>
+<td><code>NT</code></td>
 </tr>
 </tbody>
 </table>
@@ -532,150 +655,224 @@ lookup tables with no PII)</li>
 <div class="section level4">
 <h4 id="default-policy">Default policy<a class="anchor" aria-label="anchor" href="#default-policy"></a>
 </h4>
+<p>The full default policy is in <code>inst/mcp/field_policy.yml</code>
+(the canonical source of truth). Below is the current content — if it
+drifts, the YAML file is authoritative.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">students</span><span class="kw">:</span></span>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
 <span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> id</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> student_status</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> status</span></span>
 <span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> title</span></span>
 <span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> gender</span></span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> nationality</span></span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ethnicity1</span></span>
-<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ethnicity2</span></span>
-<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ethnicity3</span></span>
-<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> nz_residential_status</span></span>
-<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> visa_type</span></span>
-<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> third_party_id1</span></span>
-<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> third_party_id2</span></span>
-<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> organisation</span></span>
-<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> created_at</span></span>
-<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> updated_at</span></span>
-<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">  # Hidden: surname, forename, preferredname, email1, email2,</span></span>
-<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">  #         mobilephone, homephone, workphone, dob, nsn,</span></span>
-<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">  #         passport_number, visa_number</span></span>
-<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a></span>
-<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="fu">enrolments</span><span class="kw">:</span></span>
-<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
-<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
-<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> id</span></span>
-<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> student_id</span></span>
-<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intake_id</span></span>
-<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrstatus</span></span>
-<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrtype</span></span>
-<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrolmentdate</span></span>
-<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> withdrawaldate</span></span>
-<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> withdrawalreason</span></span>
-<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> completiondate</span></span>
-<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> fundingsource</span></span>
-<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> fundingcategory</span></span>
-<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> created_at</span></span>
-<span id="cb10-38"><a href="#cb10-38" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> updated_at</span></span>
-<span id="cb10-39"><a href="#cb10-39" tabindex="-1"></a></span>
-<span id="cb10-40"><a href="#cb10-40" tabindex="-1"></a><span class="fu">components</span><span class="kw">:</span></span>
-<span id="cb10-41"><a href="#cb10-41" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
-<span id="cb10-42"><a href="#cb10-42" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
-<span id="cb10-43"><a href="#cb10-43" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrid</span></span>
-<span id="cb10-44"><a href="#cb10-44" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compid</span></span>
-<span id="cb10-45"><a href="#cb10-45" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrolid</span></span>
-<span id="cb10-46"><a href="#cb10-46" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> studentid</span></span>
-<span id="cb10-47"><a href="#cb10-47" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrstartdate</span></span>
-<span id="cb10-48"><a href="#cb10-48" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrenddate</span></span>
-<span id="cb10-49"><a href="#cb10-49" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrstatus</span></span>
-<span id="cb10-50"><a href="#cb10-50" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrefts</span></span>
-<span id="cb10-51"><a href="#cb10-51" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrsource</span></span>
-<span id="cb10-52"><a href="#cb10-52" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrfundingcategory</span></span>
-<span id="cb10-53"><a href="#cb10-53" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compname</span></span>
-<span id="cb10-54"><a href="#cb10-54" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compresult</span></span>
-<span id="cb10-55"><a href="#cb10-55" tabindex="-1"></a></span>
-<span id="cb10-56"><a href="#cb10-56" tabindex="-1"></a><span class="fu">intakes</span><span class="kw">:</span></span>
-<span id="cb10-57"><a href="#cb10-57" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
-<span id="cb10-58"><a href="#cb10-58" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
-<span id="cb10-59"><a href="#cb10-59" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intakeid</span></span>
-<span id="cb10-60"><a href="#cb10-60" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progid</span></span>
-<span id="cb10-61"><a href="#cb10-61" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intakename</span></span>
-<span id="cb10-62"><a href="#cb10-62" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intakestartdate</span></span>
-<span id="cb10-63"><a href="#cb10-63" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intakeenddate</span></span>
-<span id="cb10-64"><a href="#cb10-64" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intakestatus</span></span>
-<span id="cb10-65"><a href="#cb10-65" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> capacity</span></span>
-<span id="cb10-66"><a href="#cb10-66" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrolment_count</span></span>
-<span id="cb10-67"><a href="#cb10-67" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> campus</span></span>
-<span id="cb10-68"><a href="#cb10-68" tabindex="-1"></a></span>
-<span id="cb10-69"><a href="#cb10-69" tabindex="-1"></a><span class="fu">programmes</span><span class="kw">:</span></span>
-<span id="cb10-70"><a href="#cb10-70" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
-<span id="cb10-71"><a href="#cb10-71" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
-<span id="cb10-72"><a href="#cb10-72" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progid</span></span>
-<span id="cb10-73"><a href="#cb10-73" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progname</span></span>
-<span id="cb10-74"><a href="#cb10-74" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progstatus</span></span>
-<span id="cb10-75"><a href="#cb10-75" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> proglevel</span></span>
-<span id="cb10-76"><a href="#cb10-76" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progefts</span></span>
-<span id="cb10-77"><a href="#cb10-77" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progtype</span></span>
-<span id="cb10-78"><a href="#cb10-78" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> nzqa_id</span></span>
-<span id="cb10-79"><a href="#cb10-79" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> duration</span></span>
-<span id="cb10-80"><a href="#cb10-80" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> delivery_mode</span></span>
-<span id="cb10-81"><a href="#cb10-81" tabindex="-1"></a></span>
-<span id="cb10-82"><a href="#cb10-82" tabindex="-1"></a><span class="fu">contacts</span><span class="kw">:</span></span>
-<span id="cb10-83"><a href="#cb10-83" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
-<span id="cb10-84"><a href="#cb10-84" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
-<span id="cb10-85"><a href="#cb10-85" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> id</span></span>
-<span id="cb10-86"><a href="#cb10-86" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> contact_type</span></span>
-<span id="cb10-87"><a href="#cb10-87" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> organisation</span></span>
-<span id="cb10-88"><a href="#cb10-88" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> created_at</span></span>
-<span id="cb10-89"><a href="#cb10-89" tabindex="-1"></a><span class="co">  # Hidden: surname, forename, email, phone, mobile</span></span>
-<span id="cb10-90"><a href="#cb10-90" tabindex="-1"></a></span>
-<span id="cb10-91"><a href="#cb10-91" tabindex="-1"></a><span class="fu">addresses</span><span class="kw">:</span></span>
-<span id="cb10-92"><a href="#cb10-92" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
-<span id="cb10-93"><a href="#cb10-93" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
-<span id="cb10-94"><a href="#cb10-94" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> addressid</span></span>
-<span id="cb10-95"><a href="#cb10-95" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> addresstype</span></span>
-<span id="cb10-96"><a href="#cb10-96" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> city</span></span>
-<span id="cb10-97"><a href="#cb10-97" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> region</span></span>
-<span id="cb10-98"><a href="#cb10-98" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> country</span></span>
-<span id="cb10-99"><a href="#cb10-99" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> postcode</span></span>
-<span id="cb10-100"><a href="#cb10-100" tabindex="-1"></a><span class="co">  # Hidden: street, suburb (too specific)</span></span>
-<span id="cb10-101"><a href="#cb10-101" tabindex="-1"></a></span>
-<span id="cb10-102"><a href="#cb10-102" tabindex="-1"></a><span class="fu">notes</span><span class="kw">:</span></span>
-<span id="cb10-103"><a href="#cb10-103" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
-<span id="cb10-104"><a href="#cb10-104" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
-<span id="cb10-105"><a href="#cb10-105" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> noteid</span></span>
-<span id="cb10-106"><a href="#cb10-106" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> student_id</span></span>
-<span id="cb10-107"><a href="#cb10-107" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrolmentid</span></span>
-<span id="cb10-108"><a href="#cb10-108" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> notetype</span></span>
-<span id="cb10-109"><a href="#cb10-109" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> notearea</span></span>
-<span id="cb10-110"><a href="#cb10-110" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> confidential</span></span>
-<span id="cb10-111"><a href="#cb10-111" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> created_at</span></span>
-<span id="cb10-112"><a href="#cb10-112" tabindex="-1"></a><span class="co">  # Hidden: note1 (free text may contain PII)</span></span>
-<span id="cb10-113"><a href="#cb10-113" tabindex="-1"></a></span>
-<span id="cb10-114"><a href="#cb10-114" tabindex="-1"></a><span class="fu">organisations</span><span class="kw">:</span></span>
-<span id="cb10-115"><a href="#cb10-115" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
-<span id="cb10-116"><a href="#cb10-116" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
-<span id="cb10-117"><a href="#cb10-117" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> id</span></span>
-<span id="cb10-118"><a href="#cb10-118" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> name</span></span>
-<span id="cb10-119"><a href="#cb10-119" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> legalname</span></span>
-<span id="cb10-120"><a href="#cb10-120" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> orgtype</span></span>
-<span id="cb10-121"><a href="#cb10-121" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> country</span></span>
-<span id="cb10-122"><a href="#cb10-122" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> registration_number</span></span>
-<span id="cb10-123"><a href="#cb10-123" tabindex="-1"></a></span>
-<span id="cb10-124"><a href="#cb10-124" tabindex="-1"></a><span class="fu">classes</span><span class="kw">:</span></span>
-<span id="cb10-125"><a href="#cb10-125" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
-<span id="cb10-126"><a href="#cb10-126" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
-<span id="cb10-127"><a href="#cb10-127" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> id</span></span>
-<span id="cb10-128"><a href="#cb10-128" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> class_name</span></span>
-<span id="cb10-129"><a href="#cb10-129" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> capacity</span></span>
-<span id="cb10-130"><a href="#cb10-130" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> startdate</span></span>
-<span id="cb10-131"><a href="#cb10-131" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enddate</span></span>
-<span id="cb10-132"><a href="#cb10-132" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> campusid</span></span>
-<span id="cb10-133"><a href="#cb10-133" tabindex="-1"></a></span>
-<span id="cb10-134"><a href="#cb10-134" tabindex="-1"></a><span class="co"># Lookup entities -- no PII</span></span>
-<span id="cb10-135"><a href="#cb10-135" tabindex="-1"></a><span class="fu">campuses</span><span class="kw">:</span></span>
-<span id="cb10-136"><a href="#cb10-136" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> all</span></span>
-<span id="cb10-137"><a href="#cb10-137" tabindex="-1"></a><span class="fu">ethnicities</span><span class="kw">:</span></span>
-<span id="cb10-138"><a href="#cb10-138" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> all</span></span>
-<span id="cb10-139"><a href="#cb10-139" tabindex="-1"></a><span class="fu">countries</span><span class="kw">:</span></span>
-<span id="cb10-140"><a href="#cb10-140" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> all</span></span>
-<span id="cb10-141"><a href="#cb10-141" tabindex="-1"></a><span class="fu">genders</span><span class="kw">:</span></span>
-<span id="cb10-142"><a href="#cb10-142" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> all</span></span>
-<span id="cb10-143"><a href="#cb10-143" tabindex="-1"></a><span class="fu">titles</span><span class="kw">:</span></span>
-<span id="cb10-144"><a href="#cb10-144" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> all</span></span></code></pre></div>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> international</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> citizenship</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> residency</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> residentialstatus</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ethnicity1</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ethnicity2</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ethnicity3</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ethnicity</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> countryofbirth</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> visatype</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> feesfree</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> prestudyactivity</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> highpostschoolqual</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> third_party_id</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> third_party_id2</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> organisation</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> interested_progid</span></span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> interested_intakeid</span></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">  # Hidden: surname, forename, preferredname, middlename, initials,</span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">  #         email1, email2, mobilephone, secondaryphone, dob, nsn,</span></span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">  #         passportnumber, passportexpiry, visanumber, visaexpiry,</span></span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a><span class="co">  #         medicalcondition, medicallist, medinsurance, ird_number,</span></span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a><span class="co">  #         bank_acc, driver_licence, disability, disabilitydetails</span></span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a></span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a><span class="fu">enrolments</span><span class="kw">:</span></span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
+<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> id</span></span>
+<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> student_id</span></span>
+<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intake_id</span></span>
+<span id="cb10-38"><a href="#cb10-38" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrstatus</span></span>
+<span id="cb10-39"><a href="#cb10-39" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrstartdate</span></span>
+<span id="cb10-40"><a href="#cb10-40" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrenddate</span></span>
+<span id="cb10-41"><a href="#cb10-41" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrstatusdate</span></span>
+<span id="cb10-42"><a href="#cb10-42" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrreturntype</span></span>
+<span id="cb10-43"><a href="#cb10-43" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrattendance</span></span>
+<span id="cb10-44"><a href="#cb10-44" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> completedsuccessfully</span></span>
+<span id="cb10-45"><a href="#cb10-45" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> fundingsource</span></span>
+<span id="cb10-46"><a href="#cb10-46" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrcompletiondate</span></span>
+<span id="cb10-47"><a href="#cb10-47" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrcompletiongrade</span></span>
+<span id="cb10-48"><a href="#cb10-48" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrqualcode</span></span>
+<span id="cb10-49"><a href="#cb10-49" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrwithdrawalreason</span></span>
+<span id="cb10-50"><a href="#cb10-50" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrwithdrawaldate</span></span>
+<span id="cb10-51"><a href="#cb10-51" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrfeesfree</span></span>
+<span id="cb10-52"><a href="#cb10-52" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> strand_id</span></span>
+<span id="cb10-53"><a href="#cb10-53" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> third_party_id</span></span>
+<span id="cb10-54"><a href="#cb10-54" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> percent_attendance</span></span>
+<span id="cb10-55"><a href="#cb10-55" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> percent_in_programme</span></span>
+<span id="cb10-56"><a href="#cb10-56" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> percent_progress</span></span>
+<span id="cb10-57"><a href="#cb10-57" tabindex="-1"></a></span>
+<span id="cb10-58"><a href="#cb10-58" tabindex="-1"></a><span class="fu">components</span><span class="kw">:</span></span>
+<span id="cb10-59"><a href="#cb10-59" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
+<span id="cb10-60"><a href="#cb10-60" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
+<span id="cb10-61"><a href="#cb10-61" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrid</span></span>
+<span id="cb10-62"><a href="#cb10-62" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compid</span></span>
+<span id="cb10-63"><a href="#cb10-63" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> parentid</span></span>
+<span id="cb10-64"><a href="#cb10-64" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrolid</span></span>
+<span id="cb10-65"><a href="#cb10-65" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> studentid</span></span>
+<span id="cb10-66"><a href="#cb10-66" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrstartdate</span></span>
+<span id="cb10-67"><a href="#cb10-67" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrenddate</span></span>
+<span id="cb10-68"><a href="#cb10-68" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrduedate</span></span>
+<span id="cb10-69"><a href="#cb10-69" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrstatus</span></span>
+<span id="cb10-70"><a href="#cb10-70" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrreturntype</span></span>
+<span id="cb10-71"><a href="#cb10-71" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrsource</span></span>
+<span id="cb10-72"><a href="#cb10-72" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrefts</span></span>
+<span id="cb10-73"><a href="#cb10-73" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrfeetf</span></span>
+<span id="cb10-74"><a href="#cb10-74" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrfundingcategory</span></span>
+<span id="cb10-75"><a href="#cb10-75" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrresidency</span></span>
+<span id="cb10-76"><a href="#cb10-76" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrattendance</span></span>
+<span id="cb10-77"><a href="#cb10-77" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrgrade</span></span>
+<span id="cb10-78"><a href="#cb10-78" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrcompletioncode</span></span>
+<span id="cb10-79"><a href="#cb10-79" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrcompletiondate</span></span>
+<span id="cb10-80"><a href="#cb10-80" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrextensiondate</span></span>
+<span id="cb10-81"><a href="#cb10-81" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrwithdrawalreason</span></span>
+<span id="cb10-82"><a href="#cb10-82" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrwithdrawaldate</span></span>
+<span id="cb10-83"><a href="#cb10-83" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> compenrfeepayingstatus</span></span>
+<span id="cb10-84"><a href="#cb10-84" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> comp_title</span></span>
+<span id="cb10-85"><a href="#cb10-85" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> comp_credit_fw</span></span>
+<span id="cb10-86"><a href="#cb10-86" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> comp_level_fw</span></span>
+<span id="cb10-87"><a href="#cb10-87" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> comp_code</span></span>
+<span id="cb10-88"><a href="#cb10-88" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> comp_version</span></span>
+<span id="cb10-89"><a href="#cb10-89" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> comp_type</span></span>
+<span id="cb10-90"><a href="#cb10-90" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> milestone</span></span>
+<span id="cb10-91"><a href="#cb10-91" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> createddate</span></span>
+<span id="cb10-92"><a href="#cb10-92" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> updateddate</span></span>
+<span id="cb10-93"><a href="#cb10-93" tabindex="-1"></a><span class="co">  # Hidden: compenrassessmentnote, userfieldchar*, userfielddate*,</span></span>
+<span id="cb10-94"><a href="#cb10-94" tabindex="-1"></a><span class="co">  #         userfieldbit*, userfieldint*, userfielddecimal*,</span></span>
+<span id="cb10-95"><a href="#cb10-95" tabindex="-1"></a><span class="co">  #         createdby, updatedby (usernames)</span></span>
+<span id="cb10-96"><a href="#cb10-96" tabindex="-1"></a></span>
+<span id="cb10-97"><a href="#cb10-97" tabindex="-1"></a><span class="fu">intakes</span><span class="kw">:</span></span>
+<span id="cb10-98"><a href="#cb10-98" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
+<span id="cb10-99"><a href="#cb10-99" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
+<span id="cb10-100"><a href="#cb10-100" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intakeid</span></span>
+<span id="cb10-101"><a href="#cb10-101" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intakecode</span></span>
+<span id="cb10-102"><a href="#cb10-102" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intakestatus</span></span>
+<span id="cb10-103"><a href="#cb10-103" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progid</span></span>
+<span id="cb10-104"><a href="#cb10-104" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> campus_id</span></span>
+<span id="cb10-105"><a href="#cb10-105" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intake_name</span></span>
+<span id="cb10-106"><a href="#cb10-106" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intakestartdate</span></span>
+<span id="cb10-107"><a href="#cb10-107" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> intakeenddate</span></span>
+<span id="cb10-108"><a href="#cb10-108" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> available_spaces</span></span>
+<span id="cb10-109"><a href="#cb10-109" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> prog_ie_min_places</span></span>
+<span id="cb10-110"><a href="#cb10-110" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> prog_ie_max_places</span></span>
+<span id="cb10-111"><a href="#cb10-111" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> strand_id</span></span>
+<span id="cb10-112"><a href="#cb10-112" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> funding_source</span></span>
+<span id="cb10-113"><a href="#cb10-113" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> fees</span></span>
+<span id="cb10-114"><a href="#cb10-114" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> createddate</span></span>
+<span id="cb10-115"><a href="#cb10-115" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> updateddate</span></span>
+<span id="cb10-116"><a href="#cb10-116" tabindex="-1"></a><span class="co">  # Hidden: createdby, updatedby (usernames)</span></span>
+<span id="cb10-117"><a href="#cb10-117" tabindex="-1"></a></span>
+<span id="cb10-118"><a href="#cb10-118" tabindex="-1"></a><span class="fu">programmes</span><span class="kw">:</span></span>
+<span id="cb10-119"><a href="#cb10-119" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
+<span id="cb10-120"><a href="#cb10-120" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
+<span id="cb10-121"><a href="#cb10-121" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progid</span></span>
+<span id="cb10-122"><a href="#cb10-122" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progcode</span></span>
+<span id="cb10-123"><a href="#cb10-123" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progversion</span></span>
+<span id="cb10-124"><a href="#cb10-124" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progtitle</span></span>
+<span id="cb10-125"><a href="#cb10-125" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progdescription</span></span>
+<span id="cb10-126"><a href="#cb10-126" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progcrediteq</span></span>
+<span id="cb10-127"><a href="#cb10-127" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progleveleq</span></span>
+<span id="cb10-128"><a href="#cb10-128" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progefts</span></span>
+<span id="cb10-129"><a href="#cb10-129" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progstatus</span></span>
+<span id="cb10-130"><a href="#cb10-130" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> proglength</span></span>
+<span id="cb10-131"><a href="#cb10-131" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> proglengthunits</span></span>
+<span id="cb10-132"><a href="#cb10-132" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ygtype</span></span>
+<span id="cb10-133"><a href="#cb10-133" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> nzqacode</span></span>
+<span id="cb10-134"><a href="#cb10-134" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> progress_type</span></span>
+<span id="cb10-135"><a href="#cb10-135" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> createddate</span></span>
+<span id="cb10-136"><a href="#cb10-136" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> updateddate</span></span>
+<span id="cb10-137"><a href="#cb10-137" tabindex="-1"></a><span class="co">  # Hidden: createdby, updatedby (usernames)</span></span>
+<span id="cb10-138"><a href="#cb10-138" tabindex="-1"></a></span>
+<span id="cb10-139"><a href="#cb10-139" tabindex="-1"></a><span class="fu">contacts</span><span class="kw">:</span></span>
+<span id="cb10-140"><a href="#cb10-140" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
+<span id="cb10-141"><a href="#cb10-141" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
+<span id="cb10-142"><a href="#cb10-142" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> id</span></span>
+<span id="cb10-143"><a href="#cb10-143" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> type_2</span></span>
+<span id="cb10-144"><a href="#cb10-144" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> gender</span></span>
+<span id="cb10-145"><a href="#cb10-145" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> status</span></span>
+<span id="cb10-146"><a href="#cb10-146" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> createddate</span></span>
+<span id="cb10-147"><a href="#cb10-147" tabindex="-1"></a><span class="co">  # Hidden: surname, forename, preferredname, middlename, initials,</span></span>
+<span id="cb10-148"><a href="#cb10-148" tabindex="-1"></a><span class="co">  #         email1, mobilephone, secondaryphone, workphone, dob, otherid</span></span>
+<span id="cb10-149"><a href="#cb10-149" tabindex="-1"></a></span>
+<span id="cb10-150"><a href="#cb10-150" tabindex="-1"></a><span class="fu">addresses</span><span class="kw">:</span></span>
+<span id="cb10-151"><a href="#cb10-151" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
+<span id="cb10-152"><a href="#cb10-152" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
+<span id="cb10-153"><a href="#cb10-153" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> addressid</span></span>
+<span id="cb10-154"><a href="#cb10-154" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> addresstype</span></span>
+<span id="cb10-155"><a href="#cb10-155" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> city</span></span>
+<span id="cb10-156"><a href="#cb10-156" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> postcode</span></span>
+<span id="cb10-157"><a href="#cb10-157" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> region</span></span>
+<span id="cb10-158"><a href="#cb10-158" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> country</span></span>
+<span id="cb10-159"><a href="#cb10-159" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> validfrom</span></span>
+<span id="cb10-160"><a href="#cb10-160" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> validto</span></span>
+<span id="cb10-161"><a href="#cb10-161" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> studentid</span></span>
+<span id="cb10-162"><a href="#cb10-162" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> orgid</span></span>
+<span id="cb10-163"><a href="#cb10-163" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> contactid</span></span>
+<span id="cb10-164"><a href="#cb10-164" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> createddate</span></span>
+<span id="cb10-165"><a href="#cb10-165" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> updateddate</span></span>
+<span id="cb10-166"><a href="#cb10-166" tabindex="-1"></a><span class="co">  # Hidden: street, suburb (too specific for PII)</span></span>
+<span id="cb10-167"><a href="#cb10-167" tabindex="-1"></a></span>
+<span id="cb10-168"><a href="#cb10-168" tabindex="-1"></a><span class="fu">notes</span><span class="kw">:</span></span>
+<span id="cb10-169"><a href="#cb10-169" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
+<span id="cb10-170"><a href="#cb10-170" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
+<span id="cb10-171"><a href="#cb10-171" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> noteid</span></span>
+<span id="cb10-172"><a href="#cb10-172" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> student_id</span></span>
+<span id="cb10-173"><a href="#cb10-173" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrolmentid</span></span>
+<span id="cb10-174"><a href="#cb10-174" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> notetype</span></span>
+<span id="cb10-175"><a href="#cb10-175" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> notearea</span></span>
+<span id="cb10-176"><a href="#cb10-176" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> confidential</span></span>
+<span id="cb10-177"><a href="#cb10-177" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> createddate</span></span>
+<span id="cb10-178"><a href="#cb10-178" tabindex="-1"></a><span class="co">  # Hidden: note1 (free text may contain PII), createdby (username)</span></span>
+<span id="cb10-179"><a href="#cb10-179" tabindex="-1"></a></span>
+<span id="cb10-180"><a href="#cb10-180" tabindex="-1"></a><span class="fu">organisations</span><span class="kw">:</span></span>
+<span id="cb10-181"><a href="#cb10-181" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
+<span id="cb10-182"><a href="#cb10-182" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
+<span id="cb10-183"><a href="#cb10-183" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> id</span></span>
+<span id="cb10-184"><a href="#cb10-184" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> name</span></span>
+<span id="cb10-185"><a href="#cb10-185" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> legalname</span></span>
+<span id="cb10-186"><a href="#cb10-186" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> orgtype</span></span>
+<span id="cb10-187"><a href="#cb10-187" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> country</span></span>
+<span id="cb10-188"><a href="#cb10-188" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> registration_number</span></span>
+<span id="cb10-189"><a href="#cb10-189" tabindex="-1"></a><span class="co">  # Note: currently returns 0 rows in production</span></span>
+<span id="cb10-190"><a href="#cb10-190" tabindex="-1"></a></span>
+<span id="cb10-191"><a href="#cb10-191" tabindex="-1"></a><span class="fu">classes</span><span class="kw">:</span></span>
+<span id="cb10-192"><a href="#cb10-192" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> allow</span></span>
+<span id="cb10-193"><a href="#cb10-193" tabindex="-1"></a><span class="at">  </span><span class="fu">fields</span><span class="kw">:</span></span>
+<span id="cb10-194"><a href="#cb10-194" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> id</span></span>
+<span id="cb10-195"><a href="#cb10-195" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> class_name</span></span>
+<span id="cb10-196"><a href="#cb10-196" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> capacity</span></span>
+<span id="cb10-197"><a href="#cb10-197" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enrolment_count</span></span>
+<span id="cb10-198"><a href="#cb10-198" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> startdate</span></span>
+<span id="cb10-199"><a href="#cb10-199" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> enddate</span></span>
+<span id="cb10-200"><a href="#cb10-200" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> campusid</span></span>
+<span id="cb10-201"><a href="#cb10-201" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> active</span></span>
+<span id="cb10-202"><a href="#cb10-202" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> createddate</span></span>
+<span id="cb10-203"><a href="#cb10-203" tabindex="-1"></a><span class="co">  # Hidden: description (may contain PII), otherid, createdby</span></span>
+<span id="cb10-204"><a href="#cb10-204" tabindex="-1"></a></span>
+<span id="cb10-205"><a href="#cb10-205" tabindex="-1"></a><span class="co"># Lookup entities -- no PII</span></span>
+<span id="cb10-206"><a href="#cb10-206" tabindex="-1"></a><span class="fu">campuses</span><span class="kw">:</span></span>
+<span id="cb10-207"><a href="#cb10-207" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> all</span></span>
+<span id="cb10-208"><a href="#cb10-208" tabindex="-1"></a><span class="fu">ethnicities</span><span class="kw">:</span></span>
+<span id="cb10-209"><a href="#cb10-209" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> all</span></span>
+<span id="cb10-210"><a href="#cb10-210" tabindex="-1"></a><span class="fu">countries</span><span class="kw">:</span></span>
+<span id="cb10-211"><a href="#cb10-211" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> all</span></span>
+<span id="cb10-212"><a href="#cb10-212" tabindex="-1"></a><span class="fu">genders</span><span class="kw">:</span></span>
+<span id="cb10-213"><a href="#cb10-213" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> all</span></span>
+<span id="cb10-214"><a href="#cb10-214" tabindex="-1"></a><span class="fu">titles</span><span class="kw">:</span></span>
+<span id="cb10-215"><a href="#cb10-215" tabindex="-1"></a><span class="at">  </span><span class="fu">mode</span><span class="kw">:</span><span class="at"> all</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="implementation">Implementation<a class="anchor" aria-label="anchor" href="#implementation"></a>
@@ -1018,10 +1215,11 @@ access</li>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><strong>30-second timeout</strong></td>
+<td><strong>60-second compute timeout</strong></td>
 <td>
-<code>setTimeLimit(elapsed = 30)</code> on every
-<code>execute_r</code> eval</td>
+<code>setTimeLimit(elapsed = 60)</code> on <code>execute_r</code>
+computation (data loading via <code>selma_get_entity()</code> runs
+outside the timeout)</td>
 </tr>
 <tr class="even">
 <td><strong>800KB response cap</strong></td>
@@ -1080,81 +1278,86 @@ Tools: list_entities, describe_entity, get_entity_summary, get_efts_report, exec
 <code>instructions</code> field. This is sent to the assistant (Claude)
 context — not shown to the end user — and front-loads domain knowledge
 to minimise tool call round-trips.</p>
-<pre><code>selmaR MCP server — SELMA student management system data for NZ PTEs/TEOs.
-Output directory for charts: {output_dir}
-
-SECURITY
-- PII field filtering is active. Some fields (names, emails, phones, DOB) are
-  redacted per the server's field policy. You will only see policy-allowed
-  columns.
-- Do NOT use :: namespace access (e.g. selmaR::selma_students). Use the
-  workspace functions provided. Blocked patterns are rejected before execution.
-- Never return raw unfiltered data. Always summarise(), count(), or head().
-
-WORKFLOW
-1. list_entities — see what data is available
-2. describe_entity("students") — check columns, row count, distributions
-3. get_entity_summary with filter_by/group_by — quick aggregate stats
-4. get_efts_report — EFTS funding analysis (no code needed)
-5. execute_r — custom dplyr/ggplot2 analysis (30-second timeout)
-
-SELMA DATA MODEL
-Students enrol into Intakes (cohorts) via Enrolments.
-Each Enrolment contains Components (individual course units with EFTS values).
-Intakes belong to Programmes (qualifications).
-
-  students --(student_id)--&gt; enrolments --(intake_id)--&gt; intakes --(progid)--&gt; programmes
-                                |
-                          enrolments --(enrolid)--&gt; components
-
-WORKSPACE FUNCTIONS
-- selma_get_entity("students") or selma_students() — fetch + policy-filter + cache
-- selma_enrolments(), selma_intakes(), selma_components(), selma_programmes()
-- selma_student_pipeline(enrolments, students, intakes) — common 3-way join
-- selma_component_pipeline(components, enrolments, students, intakes) — full join
-- selma_join_students(), selma_join_intakes(), selma_join_components(),
-  selma_join_programmes() — individual join helpers
-- Variables persist between execute_r calls
-
-STATUS CODES (use these constants, do not hardcode strings)
-- SELMA_STATUS_CONFIRMED = "C"
-- SELMA_STATUS_COMPLETED = "FC"
-- SELMA_STATUS_INCOMPLETE = "FI"
-- SELMA_STATUS_WITHDRAWN = "WR"
-- SELMA_STATUS_WITHDRAWN_SDR = "WS"
-- SELMA_FUNDED_STATUSES = c("C", "FC", "FI") — revenue-generating
-- SELMA_ALL_FUNDED_STATUSES = c("C", "FC", "FI", "WR", "WS") — includes withdrawn
-
-FUNDING SOURCES
-- "01" = Government Funded
-- "02" = International Fee-Paying
-- "29" = MPTT Level 3-4
-- "31" = Youth Guarantee
-- "37" = Non-degree L3-7 NZQCF
-
-COMMON PATTERNS
-# Active funded enrolments
-enrolments |&gt; filter(enrstatus %in% SELMA_FUNDED_STATUSES)
-
-# Enrolment counts by programme
-pipeline &lt;- selma_student_pipeline(selma_enrolments(), selma_students(), selma_intakes())
-pipeline |&gt; count(progname, enrstatus)
-
-# EFTS by funding source (use the dedicated tool instead of code)
-get_efts_report(year = 2025)
-
-CHARTING
-- Default: generate self-contained Chart.js HTML files. Write to output_dir,
-  then return the file path. The file opens in the user's browser.
-- Template: create an HTML string with a &lt;canvas&gt; element and Chart.js loaded
-  from CDN (https://cdn.jsdelivr.net/npm/chart.js), writeLines() to
-  file.path(output_dir, "chart_name.html"), then browseURL() to open it.
-- Use ggplot2 only if the user specifically requests a static PNG or the chart
-  type is not supported by Chart.js (e.g. complex faceted statistical plots).
-- For ggplot2: the server auto-detects gg objects and saves PNG + HTML wrapper.
-
-PRE-LOADED PACKAGES
-dplyr, tidyr, ggplot2, lubridate, scales</code></pre>
+<p>The full <code>SERVER_INSTRUCTIONS</code> string is defined in
+<code>inst/mcp/server.R</code> (search for
+<code>SERVER_INSTRUCTIONS &lt;-</code>). It is maintained there as the
+single source of truth to avoid dual-maintenance drift.</p>
+<p>The instructions cover these sections:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Section</th>
+<th>Purpose</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><strong>TOOL DISCOVERY</strong></td>
+<td>Which tools to call and in what order</td>
+</tr>
+<tr class="even">
+<td><strong>SECURITY</strong></td>
+<td>PII policy rules, blocked patterns</td>
+</tr>
+<tr class="odd">
+<td><strong>WORKFLOW</strong></td>
+<td>Recommended 5-step tool progression</td>
+</tr>
+<tr class="even">
+<td><strong>SELMA DATA MODEL</strong></td>
+<td>Entity relationships and join keys</td>
+</tr>
+<tr class="odd">
+<td><strong>JOIN KEYS</strong></td>
+<td>Exact column names for cross-entity joins</td>
+</tr>
+<tr class="even">
+<td><strong>ENTITY FIELDS</strong></td>
+<td>Per-entity column listing (policy-allowed only)</td>
+</tr>
+<tr class="odd">
+<td><strong>KEY DATE FIELDS</strong></td>
+<td>Important date columns per entity</td>
+</tr>
+<tr class="even">
+<td><strong>ENROLMENT STATUS CODES</strong></td>
+<td>
+<code>SELMA_STATUS_*</code> constants</td>
+</tr>
+<tr class="odd">
+<td><strong>STATUS GROUPS</strong></td>
+<td>
+<code>SELMA_FUNDED_STATUSES</code>,
+<code>SELMA_ALL_FUNDED_STATUSES</code>
+</td>
+</tr>
+<tr class="even">
+<td><strong>FUNDING SOURCES</strong></td>
+<td>
+<code>SELMA_FUNDING_*</code> constants</td>
+</tr>
+<tr class="odd">
+<td><strong>WORKSPACE FUNCTIONS</strong></td>
+<td>
+<code>selma_*()</code> fetchers, join helpers, pipelines</td>
+</tr>
+<tr class="even">
+<td><strong>COMMON PATTERNS</strong></td>
+<td>Example dplyr pipelines
+(e.g. <code>count(progtitle, enrstatus)</code>)</td>
+</tr>
+<tr class="odd">
+<td><strong>CHARTING</strong></td>
+<td>Chart.js HTML via <code>save_chart()</code>, ggplot2 fallback</td>
+</tr>
+<tr class="even">
+<td><strong>PRE-LOADED PACKAGES</strong></td>
+<td>dplyr, tidyr, ggplot2, lubridate, scales</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <div class="section level2">
@@ -1163,24 +1366,24 @@ dplyr, tidyr, ggplot2, lubridate, scales</code></pre>
 <div class="section level3">
 <h3 id="claude-desktop-claude-code-config">Claude Desktop / Claude Code config<a class="anchor" aria-label="anchor" href="#claude-desktop-claude-code-config"></a>
 </h3>
-<div class="sourceCode" id="cb24"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>  <span class="dt">"mcpServers"</span><span class="fu">:</span> <span class="fu">{</span></span>
-<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a>    <span class="dt">"selmaR"</span><span class="fu">:</span> <span class="fu">{</span></span>
-<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a>      <span class="dt">"command"</span><span class="fu">:</span> <span class="st">"Rscript"</span><span class="fu">,</span></span>
-<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a>      <span class="dt">"args"</span><span class="fu">:</span> <span class="ot">[</span><span class="st">"/path/to/selmaR/inst/mcp/server.R"</span><span class="ot">]</span><span class="fu">,</span></span>
-<span id="cb24-6"><a href="#cb24-6" tabindex="-1"></a>      <span class="dt">"cwd"</span><span class="fu">:</span> <span class="st">"/path/to/project/with/config.yml"</span></span>
-<span id="cb24-7"><a href="#cb24-7" tabindex="-1"></a>    <span class="fu">}</span></span>
-<span id="cb24-8"><a href="#cb24-8" tabindex="-1"></a>  <span class="fu">}</span></span>
-<span id="cb24-9"><a href="#cb24-9" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>  <span class="dt">"mcpServers"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a>    <span class="dt">"selmaR"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a>      <span class="dt">"command"</span><span class="fu">:</span> <span class="st">"Rscript"</span><span class="fu">,</span></span>
+<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a>      <span class="dt">"args"</span><span class="fu">:</span> <span class="ot">[</span><span class="st">"/path/to/selmaR/inst/mcp/server.R"</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a>      <span class="dt">"cwd"</span><span class="fu">:</span> <span class="st">"/path/to/directory/containing/config.yml"</span></span>
+<span id="cb23-7"><a href="#cb23-7" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb23-8"><a href="#cb23-8" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb23-9"><a href="#cb23-9" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="selma-credentials-config-yml-in-cwd">SELMA credentials (<code>config.yml</code> in <code>cwd</code>)<a class="anchor" aria-label="anchor" href="#selma-credentials-config-yml-in-cwd"></a>
 </h3>
-<div class="sourceCode" id="cb25"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="fu">default</span><span class="kw">:</span></span>
-<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a><span class="at">  </span><span class="fu">selma</span><span class="kw">:</span></span>
-<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a><span class="at">    </span><span class="fu">base_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://myorg.selma.co.nz/"</span></span>
-<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a><span class="at">    </span><span class="fu">email</span><span class="kw">:</span><span class="at"> </span><span class="st">"api@selma.co.nz"</span></span>
-<span id="cb25-5"><a href="#cb25-5" tabindex="-1"></a><span class="at">    </span><span class="fu">password</span><span class="kw">:</span><span class="at"> </span><span class="st">"your_password"</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="fu">default</span><span class="kw">:</span></span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a><span class="at">  </span><span class="fu">selma</span><span class="kw">:</span></span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a><span class="at">    </span><span class="fu">base_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://myorg.selma.co.nz/"</span></span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a><span class="at">    </span><span class="fu">email</span><span class="kw">:</span><span class="at"> </span><span class="st">"api@selma.co.nz"</span></span>
+<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a><span class="at">    </span><span class="fu">password</span><span class="kw">:</span><span class="at"> </span><span class="st">"your_password"</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="environment-variable-overrides">Environment variable overrides<a class="anchor" aria-label="anchor" href="#environment-variable-overrides"></a>

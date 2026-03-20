@@ -99,11 +99,41 @@ This is applied to ID columns after the field policy filter:
 
 | Column pattern | Prefix | Example |
 |----------------|--------|---------|
-| `id`, `student_id`, `studentid` | `S` | `S-a3f2c1b9` |
+| `id` (entity-aware — see below) | per entity | `S-a3f2c1b9` |
+| `student_id`, `studentid` | `S` | `S-a3f2c1b9` |
 | `nsn` | `N` | `N-7e4d2f1a` |
 | `contact_id`, `contactid` | `C` | `C-b8e3a5d2` |
-| `enrolment_id`, `enrolid` | `E` | `E-1c9f4b7e` |
+| `enrolment_id`, `enrolid`, `enrol_id` | `E` | `E-1c9f4b7e` |
 | `intake_id`, `intakeid` | `I` | `I-d2a8c3f6` |
+| `compenrid` | `CE` | `CE-5a8b3c2d` |
+| `compid` | `CP` | `CP-9d1e4f7a` |
+| `progid`, `prog_id`, `interested_progid` | `P` | `P-2b6c8d1e` |
+| `campus_id`, `campusid` | `CA` | `CA-4e7f1a3b` |
+| `strand_id` | `ST` | `ST-6a9c2d4e` |
+| `orgid` | `O` | `O-8b1d3e5f` |
+| `parentid` | `E` | `E-3c5d7e9a` |
+| `interested_intakeid` | `I` | `I-7a2b4c6d` |
+| `addressid` | `A` | `A-1e3f5a7b` |
+| `noteid` | `NT` | `NT-9c2d4e6f` |
+| `enrolmentid` | `E` | `E-5a7b9c1d` |
+
+The generic `id` column is ambiguous — it appears in students, enrolments,
+contacts, and other entities. The server uses an `ENTITY_ID_PREFIX` lookup
+to assign the correct prefix based on which entity the data came from:
+
+| Entity | `id` prefix |
+|--------|-------------|
+| students | `S` |
+| enrolments | `E` |
+| contacts | `C` |
+| intakes | `I` |
+| programmes | `P` |
+| components | `CE` |
+| organisations | `O` |
+| classes | `CL` |
+| campuses | `CA` |
+| addresses | `A` |
+| notes | `NT` |
 
 **Key property:** the hash is deterministic within a session. The same real
 student ID always produces the same pseudo-ID, so joins between entities
@@ -297,28 +327,41 @@ Three modes per entity:
 
 #### Default policy
 
+The full default policy is in `inst/mcp/field_policy.yml` (the canonical
+source of truth). Below is the current content — if it drifts, the YAML file
+is authoritative.
+
 ```yaml
 students:
   mode: allow
   fields:
     - id
-    - student_status
+    - status
     - title
     - gender
-    - nationality
+    - international
+    - citizenship
+    - residency
+    - residentialstatus
     - ethnicity1
     - ethnicity2
     - ethnicity3
-    - nz_residential_status
-    - visa_type
-    - third_party_id1
+    - ethnicity
+    - countryofbirth
+    - visatype
+    - feesfree
+    - prestudyactivity
+    - highpostschoolqual
+    - third_party_id
     - third_party_id2
     - organisation
-    - created_at
-    - updated_at
-  # Hidden: surname, forename, preferredname, email1, email2,
-  #         mobilephone, homephone, workphone, dob, nsn,
-  #         passport_number, visa_number
+    - interested_progid
+    - interested_intakeid
+  # Hidden: surname, forename, preferredname, middlename, initials,
+  #         email1, email2, mobilephone, secondaryphone, dob, nsn,
+  #         passportnumber, passportexpiry, visanumber, visaexpiry,
+  #         medicalcondition, medicallist, medinsurance, ird_number,
+  #         bank_acc, driver_licence, disability, disabilitydetails
 
 enrolments:
   mode: allow
@@ -327,66 +370,116 @@ enrolments:
     - student_id
     - intake_id
     - enrstatus
-    - enrtype
-    - enrolmentdate
-    - withdrawaldate
-    - withdrawalreason
-    - completiondate
+    - enrstartdate
+    - enrenddate
+    - enrstatusdate
+    - enrreturntype
+    - enrattendance
+    - completedsuccessfully
     - fundingsource
-    - fundingcategory
-    - created_at
-    - updated_at
+    - enrcompletiondate
+    - enrcompletiongrade
+    - enrqualcode
+    - enrwithdrawalreason
+    - enrwithdrawaldate
+    - enrfeesfree
+    - strand_id
+    - third_party_id
+    - percent_attendance
+    - percent_in_programme
+    - percent_progress
 
 components:
   mode: allow
   fields:
     - compenrid
     - compid
+    - parentid
     - enrolid
     - studentid
     - compenrstartdate
     - compenrenddate
+    - compenrduedate
     - compenrstatus
-    - compenrefts
+    - compenrreturntype
     - compenrsource
+    - compenrefts
+    - compenrfeetf
     - compenrfundingcategory
-    - compname
-    - compresult
+    - compenrresidency
+    - compenrattendance
+    - compenrgrade
+    - compenrcompletioncode
+    - compenrcompletiondate
+    - compenrextensiondate
+    - compenrwithdrawalreason
+    - compenrwithdrawaldate
+    - compenrfeepayingstatus
+    - comp_title
+    - comp_credit_fw
+    - comp_level_fw
+    - comp_code
+    - comp_version
+    - comp_type
+    - milestone
+    - createddate
+    - updateddate
+  # Hidden: compenrassessmentnote, userfieldchar*, userfielddate*,
+  #         userfieldbit*, userfieldint*, userfielddecimal*,
+  #         createdby, updatedby (usernames)
 
 intakes:
   mode: allow
   fields:
     - intakeid
+    - intakecode
+    - intakestatus
     - progid
-    - intakename
+    - campus_id
+    - intake_name
     - intakestartdate
     - intakeenddate
-    - intakestatus
-    - capacity
-    - enrolment_count
-    - campus
+    - available_spaces
+    - prog_ie_min_places
+    - prog_ie_max_places
+    - strand_id
+    - funding_source
+    - fees
+    - createddate
+    - updateddate
+  # Hidden: createdby, updatedby (usernames)
 
 programmes:
   mode: allow
   fields:
     - progid
-    - progname
-    - progstatus
-    - proglevel
+    - progcode
+    - progversion
+    - progtitle
+    - progdescription
+    - progcrediteq
+    - progleveleq
     - progefts
-    - progtype
-    - nzqa_id
-    - duration
-    - delivery_mode
+    - progstatus
+    - proglength
+    - proglengthunits
+    - ygtype
+    - nzqacode
+    - progress_type
+    - createddate
+    - updateddate
+  # Hidden: createdby, updatedby (usernames)
 
 contacts:
   mode: allow
   fields:
     - id
-    - contact_type
-    - organisation
-    - created_at
-  # Hidden: surname, forename, email, phone, mobile
+    - type_2
+    - gender
+    - status
+    - createddate
+  # Hidden: surname, forename, preferredname, middlename, initials,
+  #         email1, mobilephone, secondaryphone, workphone, dob, otherid
 
 addresses:
   mode: allow
@@ -394,10 +487,17 @@ addresses:
     - addressid
     - addresstype
     - city
+    - postcode
     - region
     - country
-    - postcode
-  # Hidden: street, suburb (too specific)
+    - validfrom
+    - validto
+    - studentid
+    - orgid
+    - contactid
+    - createddate
+    - updateddate
+  # Hidden: street, suburb (too specific for PII)
 
 notes:
   mode: allow
@@ -408,8 +508,8 @@ notes:
     - notetype
     - notearea
     - confidential
-    - created_at
-  # Hidden: note1 (free text may contain PII)
+    - createddate
+  # Hidden: note1 (free text may contain PII), createdby (username)
 
 organisations:
   mode: allow
@@ -420,6 +520,7 @@ organisations:
     - orgtype
     - country
     - registration_number
+  # Note: currently returns 0 rows in production
 
 classes:
   mode: allow
@@ -427,9 +528,13 @@ classes:
     - id
     - class_name
     - capacity
+    - enrolment_count
     - startdate
     - enddate
     - campusid
+    - active
+    - createddate
+  # Hidden: description (may contain PII), otherid, createdby
 
 # Lookup entities -- no PII
 campuses:
@@ -733,7 +838,7 @@ are injected into the workspace.
 
 | Guard | Detail |
 |-------|--------|
-| **30-second timeout** | `setTimeLimit(elapsed = 30)` on every `execute_r` eval |
+| **60-second compute timeout** | `setTimeLimit(elapsed = 60)` on `execute_r` computation (data loading via `selma_get_entity()` runs outside the timeout) |
 | **800KB response cap** | Truncate oversized responses with `[TRUNCATED]` warning |
 | **Row-count reporting** | Workspace wrapper emits `[entity: N rows x M cols]` messages |
 | **Large dataset warnings** | Entities >50K rows trigger `[WARNING: filter early]` |
@@ -762,83 +867,28 @@ The MCP `initialize` response includes an `instructions` field. This is sent
 to the assistant (Claude) context — not shown to the end user — and
 front-loads domain knowledge to minimise tool call round-trips.
 
-```
-selmaR MCP server — SELMA student management system data for NZ PTEs/TEOs.
-Output directory for charts: {output_dir}
+The full `SERVER_INSTRUCTIONS` string is defined in `inst/mcp/server.R` (search
+for `SERVER_INSTRUCTIONS <-`). It is maintained there as the single source of
+truth to avoid dual-maintenance drift.
 
-SECURITY
-- PII field filtering is active. Some fields (names, emails, phones, DOB) are
-  redacted per the server's field policy. You will only see policy-allowed
-  columns.
-- Do NOT use :: namespace access (e.g. selmaR::selma_students). Use the
-  workspace functions provided. Blocked patterns are rejected before execution.
-- Never return raw unfiltered data. Always summarise(), count(), or head().
+The instructions cover these sections:
 
-WORKFLOW
-1. list_entities — see what data is available
-2. describe_entity("students") — check columns, row count, distributions
-3. get_entity_summary with filter_by/group_by — quick aggregate stats
-4. get_efts_report — EFTS funding analysis (no code needed)
-5. execute_r — custom dplyr/ggplot2 analysis (30-second timeout)
-
-SELMA DATA MODEL
-Students enrol into Intakes (cohorts) via Enrolments.
-Each Enrolment contains Components (individual course units with EFTS values).
-Intakes belong to Programmes (qualifications).
-
-  students --(student_id)--> enrolments --(intake_id)--> intakes --(progid)--> programmes
-                                |
-                          enrolments --(enrolid)--> components
-
-WORKSPACE FUNCTIONS
-- selma_get_entity("students") or selma_students() — fetch + policy-filter + cache
-- selma_enrolments(), selma_intakes(), selma_components(), selma_programmes()
-- selma_student_pipeline(enrolments, students, intakes) — common 3-way join
-- selma_component_pipeline(components, enrolments, students, intakes) — full join
-- selma_join_students(), selma_join_intakes(), selma_join_components(),
-  selma_join_programmes() — individual join helpers
-- Variables persist between execute_r calls
-
-STATUS CODES (use these constants, do not hardcode strings)
-- SELMA_STATUS_CONFIRMED = "C"
-- SELMA_STATUS_COMPLETED = "FC"
-- SELMA_STATUS_INCOMPLETE = "FI"
-- SELMA_STATUS_WITHDRAWN = "WR"
-- SELMA_STATUS_WITHDRAWN_SDR = "WS"
-- SELMA_FUNDED_STATUSES = c("C", "FC", "FI") — revenue-generating
-- SELMA_ALL_FUNDED_STATUSES = c("C", "FC", "FI", "WR", "WS") — includes withdrawn
-
-FUNDING SOURCES
-- "01" = Government Funded
-- "02" = International Fee-Paying
-- "29" = MPTT Level 3-4
-- "31" = Youth Guarantee
-- "37" = Non-degree L3-7 NZQCF
-
-COMMON PATTERNS
-# Active funded enrolments
-enrolments |> filter(enrstatus %in% SELMA_FUNDED_STATUSES)
-
-# Enrolment counts by programme
-pipeline <- selma_student_pipeline(selma_enrolments(), selma_students(), selma_intakes())
-pipeline |> count(progname, enrstatus)
-
-# EFTS by funding source (use the dedicated tool instead of code)
-get_efts_report(year = 2025)
-
-CHARTING
-- Default: generate self-contained Chart.js HTML files. Write to output_dir,
-  then return the file path. The file opens in the user's browser.
-- Template: create an HTML string with a <canvas> element and Chart.js loaded
-  from CDN (https://cdn.jsdelivr.net/npm/chart.js), writeLines() to
-  file.path(output_dir, "chart_name.html"), then browseURL() to open it.
-- Use ggplot2 only if the user specifically requests a static PNG or the chart
-  type is not supported by Chart.js (e.g. complex faceted statistical plots).
-- For ggplot2: the server auto-detects gg objects and saves PNG + HTML wrapper.
-
-PRE-LOADED PACKAGES
-dplyr, tidyr, ggplot2, lubridate, scales
-```
+| Section | Purpose |
+|---------|---------|
+| **TOOL DISCOVERY** | Which tools to call and in what order |
+| **SECURITY** | PII policy rules, blocked patterns |
+| **WORKFLOW** | Recommended 5-step tool progression |
+| **SELMA DATA MODEL** | Entity relationships and join keys |
+| **JOIN KEYS** | Exact column names for cross-entity joins |
+| **ENTITY FIELDS** | Per-entity column listing (policy-allowed only) |
+| **KEY DATE FIELDS** | Important date columns per entity |
+| **ENROLMENT STATUS CODES** | `SELMA_STATUS_*` constants |
+| **STATUS GROUPS** | `SELMA_FUNDED_STATUSES`, `SELMA_ALL_FUNDED_STATUSES` |
+| **FUNDING SOURCES** | `SELMA_FUNDING_*` constants |
+| **WORKSPACE FUNCTIONS** | `selma_*()` fetchers, join helpers, pipelines |
+| **COMMON PATTERNS** | Example dplyr pipelines (e.g. `count(progtitle, enrstatus)`) |
+| **CHARTING** | Chart.js HTML via `save_chart()`, ggplot2 fallback |
+| **PRE-LOADED PACKAGES** | dplyr, tidyr, ggplot2, lubridate, scales |
 
 ## Configuration
 
@@ -850,7 +900,7 @@ dplyr, tidyr, ggplot2, lubridate, scales
     "selmaR": {
       "command": "Rscript",
       "args": ["/path/to/selmaR/inst/mcp/server.R"],
-      "cwd": "/path/to/project/with/config.yml"
+      "cwd": "/path/to/directory/containing/config.yml"
     }
   }
 }
