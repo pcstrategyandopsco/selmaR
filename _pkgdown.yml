@@ -29,6 +29,8 @@ navbar:
       menu:
         - text: "Getting Started"
           href: articles/getting-started.html
+        - text: "Moving to SELMA API v3"
+          href: articles/api-v3-migration.html
         - text: "---"
         - text: "Use Cases"
         - text: "EFTS Pro-Rata Reporting"

@@ -2,8 +2,8 @@
 
 ### All vignettes
 
-- [Migrating from SELMA API v2 to
-  v3](https://pcstrategyandopsco.github.io/selmaR/articles/api-v3-migration.md):
+- [Moving to SELMA API v3 — What Changes and What Gets
+  Better](https://pcstrategyandopsco.github.io/selmaR/articles/api-v3-migration.md):
 - [EFTS Pro-Rata
   Reporting](https://pcstrategyandopsco.github.io/selmaR/articles/efts-reporting.md):
 - [Getting Started with
