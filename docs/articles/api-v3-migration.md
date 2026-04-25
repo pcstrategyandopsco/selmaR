@@ -1,0 +1,415 @@
+# Migrating from SELMA API v2 to v3
+
+SELMA v3 is a significant API revision. This vignette documents every
+breaking change that affects selmaR users, and explains how the package
+handles them transparently.
+
+## Quick start
+
+``` r
+
+# v2 (explicit)
+con <- selma_connect(api_version = "v2")
+
+# v3 (explicit)
+con <- selma_connect(api_version = "v3")
+
+# Auto-detect (default) — probes the API at connect time
+con <- selma_connect()
+```
+
+The detected version is stored on the connection object and drives all
+subsequent requests:
+
+``` r
+
+con$api_version  # "v2" or "v3"
+print(con)       # shows version in summary
+```
+
+------------------------------------------------------------------------
+
+## Structural changes
+
+|                        | v2                                    | v3           |
+|------------------------|---------------------------------------|--------------|
+| URL path prefix        | `/app/`                               | `/api/`      |
+| Pagination member key  | `hydra:member`                        | `member`     |
+| Pagination total key   | `hydra:totalItems`                    | `totalItems` |
+| Auth endpoint          | `api/login_check`                     | `api/auth`   |
+| Field casing (raw API) | Inconsistent (camelCase / PascalCase) | snake_case   |
+
+**All of the above are handled automatically** — you do not change any
+code for them. When your SELMA instance upgrades, re-run
+[`selma_connect()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_connect.md)
+and selmaR auto-detects the new version and adjusts path prefixes,
+pagination keys, and auth endpoints accordingly.
+
+------------------------------------------------------------------------
+
+## JSON-LD metadata: `@id`, `@type`, `@context`
+
+SELMA uses Hydra JSON-LD, which annotates every API response with three
+metadata fields:
+
+| JSON-LD field | Purpose                                       |
+|---------------|-----------------------------------------------|
+| `@id`         | IRI of the record (e.g. `"/api/students/42"`) |
+| `@type`       | JSON-LD type (e.g. `"Student"`)               |
+| `@context`    | JSON-LD context URL                           |
+
+These are internal API machinery — they carry no useful data for
+analytics. selmaR drops all three **before** applying `clean_names()`.
+This means:
+
+- `id` in every returned tibble is always the **integer primary key** —
+  clean and joinable
+- `@type` and `@context` are never visible in output
+- You never need to work around JSON-LD artifacts
+
+This applies identically to v2 and v3.
+
+------------------------------------------------------------------------
+
+## IRI foreign key references (v3 only)
+
+In v3, foreign key columns reference related records as IRI strings
+rather than plain integers:
+
+    # Raw v3 API response — enrolments
+    {
+      "id": 101,
+      "student": "/api/students/42",
+      "intake":  "/api/intakes/10"
+    }
+
+selmaR strips the IRI path and retains only the trailing ID segment as a
+**character string**:
+
+``` r
+
+enrolments <- selma_enrolments(con)
+
+# id is integer (primary key)
+# student, intake are character ("42", "10")
+str(enrolments[, c("id", "student", "intake")])
+#> $ id      : int  101 102 ...
+#> $ student : chr  "42" "99" ...
+#> $ intake  : chr  "10" "10" ...
+```
+
+This stripping is automatic and version-aware — v2 foreign keys are
+already integers and are left untouched.
+
+### Joining v3 data
+
+Because `id` columns are integers and IRI-derived FK columns are
+characters, you need a type cast when joining:
+
+``` r
+
+library(dplyr)
+
+# Option 1: cast the FK to integer before joining
+enrolments |>
+  mutate(student_id = as.integer(student)) |>
+  left_join(students, by = c("student_id" = "id"))
+
+# Option 2: cast the PK to character
+enrolments |>
+  left_join(
+    mutate(students, id = as.character(id)),
+    by = c("student" = "id")
+  )
+```
+
+The convenience join helpers
+([`selma_join_students()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_join_students.md),
+[`selma_join_intakes()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_join_intakes.md),
+etc.) handle this cast for you.
+
+------------------------------------------------------------------------
+
+## Stable function names across API versions
+
+Many SELMA v3 endpoints were renamed from v2. selmaR resolves these
+transparently via an internal alias table so all function names work
+regardless of which API version your instance runs.
+
+Examples of functions that route to different endpoint paths by version:
+
+| selmaR function | v2 endpoint | v3 endpoint |
+|----|----|----|
+| [`selma_ethnicities()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_ethnicities.md) | `ethnicities` | `new_zealand_ethnicities` |
+| [`selma_nz_iwis()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_nz_iwis.md) | `nz_iwis` | `new_zealand_iwis` |
+| [`selma_nz_residential_statuses()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_nz_residential_statuses.md) | `n_z_residential_statuses` | `new_zealand_residential_statuses` |
+| [`selma_secondary_schools()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_secondary_schools.md) | `secondary_schools` | `new_zealand_secondary_schools` |
+| [`selma_secondary_quals()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_secondary_quals.md) | `secondary_quals` | `new_zealand_secondary_school_qualifications` |
+| [`selma_withdrawal_reason_codes()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_withdrawal_reason_codes.md) | `withdrawal_reason_codes` | `withdrawal_reasons` |
+| [`selma_enr_status_codes()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_enr_status_codes.md) | `enr_status_codes` | `enrolment_statuses` |
+| [`selma_classes()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_classes.md) | `classes` | `sys_classes` |
+| [`selma_contacts()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_contacts.md) | `student_contacts` | `student_contact_associations` |
+
+No code changes are required when your SELMA instance upgrades.
+
+------------------------------------------------------------------------
+
+## v2-only endpoints
+
+Some SELMA v2 endpoints have no v3 equivalent. Functions wrapping these
+endpoints detect the connection version and abort with an informative
+message rather than sending a request that would fail silently:
+
+``` r
+
+# On a v3 connection, these abort immediately with a clear error
+selma_student_custom_fields("123", con)
+#> Error: selma_student_custom_fields() uses a v2-only endpoint with no v3 equivalent.
+#> ℹ Check the v3 API spec for an alternative endpoint.
+
+selma_enrolment_custom_fields("456", con)
+selma_component_custom_fields("456", con)
+selma_milestones("42", con)
+```
+
+### `selma_intake_enrolments()` — v2 only
+
+The `/app/intake_enrolments` endpoint was removed in v3. Use the
+`filter` argument on
+[`selma_enrolments()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_enrolments.md)
+instead:
+
+``` r
+
+# v2
+ie <- selma_intake_enrolments(intake_id = 123, con = con)
+
+# v3 equivalent
+enrolments <- selma_enrolments(con, filter = list(intake = "123"))
+```
+
+------------------------------------------------------------------------
+
+## Server-side filtering — `filter = list()`
+
+All core entity functions (`selma_students`, `selma_enrolments`,
+`selma_intakes`, `selma_components`, `selma_programmes`) and all
+functions created with
+[`make_entity_fetcher()`](https://pcstrategyandopsco.github.io/selmaR/reference/make_entity_fetcher.md)
+accept a `filter` list for server-side filtering.
+
+Parameter names are validated against the OpenAPI spec for your API
+version — unknown parameters emit a warning and are dropped rather than
+silently sending a wrong request to the API.
+
+``` r
+
+# v3 — filter students by first name
+smiths <- selma_students(con, filter = list(surname = "Smith"))
+alices <- selma_students(con, filter = list(first_name = "Alice"))
+
+# v3 — filter enrolments by intake or student
+enrs <- selma_enrolments(con, filter = list(intake = "123"))
+enrs <- selma_enrolments(con, filter = list(student = "456"))
+
+# v3 — components for a specific enrolment
+comps <- selma_components(con, filter = list(enrolment = "456"))
+
+# v3 — intakes starting after a date
+upcoming <- selma_intakes(con, filter = list(`start_date[after]` = "2025-01-01"))
+```
+
+To see valid filter parameters for a given function and API version:
+
+``` r
+
+selmaR:::.selma_schemas$v3$students$params
+selmaR:::.selma_schemas$v3$enrolments$params
+```
+
+### Parameter names differ between versions
+
+The API parameter names (not the R function names) changed between v2
+and v3. Pass the parameter name appropriate for your API version:
+
+| Entity                     | v2 parameter             | v3 parameter        |
+|----------------------------|--------------------------|---------------------|
+| students — first name      | `forename`               | `first_name`        |
+| students — email           | `email1`                 | `email_primary`     |
+| students — date of birth   | `dob`                    | `date_of_birth`     |
+| enrolments — by intake     | *(not supported)*        | `intake`            |
+| enrolments — by student    | *(not supported)*        | `student`           |
+| components — by enrolment  | `enrolid`                | `enrolment`         |
+| intakes — start date range | `intakestartdate[after]` | `start_date[after]` |
+
+------------------------------------------------------------------------
+
+## Querying endpoints not yet wrapped
+
+SELMA v3 has over 200 collection endpoints. selmaR does not wrap all of
+them. Use
+[`make_entity_fetcher()`](https://pcstrategyandopsco.github.io/selmaR/reference/make_entity_fetcher.md)
+to create a function for any endpoint, or
+[`selma_get()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_get.md)
+for a one-off query:
+
+``` r
+
+# Create a reusable function
+selma_events     <- make_entity_fetcher("events")
+selma_placements <- make_entity_fetcher("placements")
+selma_visas      <- make_entity_fetcher("visas")
+
+events <- selma_events(con)
+
+# One-off query
+passports <- selma_get(con, "passports")
+documents <- selma_get(con, "documents")
+```
+
+The endpoint name should be the v3 path segment (e.g. `"events"` for
+`/api/events`). The returned function has the same `filter`, `cache`,
+`cache_dir`, `cache_hours`, and `items_per_page` arguments as the named
+entity functions.
+
+------------------------------------------------------------------------
+
+## Field name changes
+
+The returned tibble column names differ between versions because v3
+changed field names. selmaR surfaces what the API returns after
+`clean_names()` — no field translation is applied.
+
+### Students
+
+Key renames (v2 column → v3 column):
+
+| v2                  | v3                      |
+|---------------------|-------------------------|
+| `forename`          | `first_name`            |
+| `middlename`        | `middle_name`           |
+| `surname`           | `surname` *(unchanged)* |
+| `preferredname`     | `preferred_name`        |
+| `previousname`      | `previous_name`         |
+| `dob`               | `date_of_birth`         |
+| `mobilephone`       | `phone_mobile`          |
+| `secondaryphone`    | `phone_home`            |
+| `email1`            | `email_primary`         |
+| `email2`            | `email_secondary`       |
+| `countryofbirth`    | `country_of_birth`      |
+| `third_party_id`    | `other_id_1`            |
+| `third_party_id2`   | `other_id_2`            |
+| `disabilitydetails` | `disability_details`    |
+| `medicalcondition`  | `medical_condition`     |
+| `bank_acc`          | `bank_account`          |
+
+Fields present in v2 but **removed in v3**: `nsn`, `contacts`,
+`initials`, `identitychecked`, `international`, `mainagent`,
+`austresidency`, `residency`, `residentialstatus`, `passportnumber`,
+`passportexpiry`, `visatype`, `visanumber`, `visaexpiry`,
+`ethnicity1`–`3`, `iwi1`–`3`, `lms_isuser`, `validate_data_for`.
+
+Fields **new in v3**: `pronoun`, `contact_id`, `user_name`,
+`email_school`, `phone_work`, `homestay`, `primary_learning_style`,
+`secondary_learning_style`, `student_identifier`,
+`new_zealand_student_extension`, `australia_student_extension`.
+
+### Enrolments
+
+Key renames:
+
+| v2                    | v3                                     |
+|-----------------------|----------------------------------------|
+| `student_id`          | `student` *(IRI → character)*          |
+| `intake_id`           | `intake` *(IRI → character)*           |
+| `enrstartdate`        | `start_date`                           |
+| `enrenddate`          | `end_date`                             |
+| `enrstatus`           | `enrolment_status` *(IRI → character)* |
+| `enrstatusdate`       | `enrolment_status_date`                |
+| `fundingsource`       | `enrolment_payer_type_id`              |
+| `enrwithdrawalreason` | `withdrawal_reason`                    |
+| `enrwithdrawaldate`   | `withdrawal_date`                      |
+| `enrcompletiondate`   | `finished_date`                        |
+
+### Enrolment components
+
+| v2                      | v3                                     |
+|-------------------------|----------------------------------------|
+| `compenrid`             | `id`                                   |
+| `enrolid`               | `enrolment` *(IRI → character)*        |
+| `compid`                | `component` *(IRI → character)*        |
+| `compenrstartdate`      | `start_date`                           |
+| `compenrenddate`        | `end_date`                             |
+| `compenrduedate`        | `due_date`                             |
+| `compenrstatus`         | `enrolment_status` *(IRI → character)* |
+| `compenrwithdrawaldate` | `withdrawal_date`                      |
+| `compenrcompletiondate` | `completion_date`                      |
+| `compenrextensiondate`  | `extension_date`                       |
+| `compenrgrade`          | *(via `enrolment_component_grades`)*   |
+
+Many v2 user-defined fields (`userfieldchar1` etc.) are replaced by
+`custom_field_values` in v3.
+
+### Intakes
+
+| v2                | v3                                |
+|-------------------|-----------------------------------|
+| `intakeid`        | `id`                              |
+| `intakecode`      | `code`                            |
+| `intake_name`     | `name`                            |
+| `intakestartdate` | `start_date`                      |
+| `intakeenddate`   | `end_date`                        |
+| `intakestatus`    | `intake_status` *(nested object)* |
+| `progid`          | `programme` *(IRI → character)*   |
+
+### Programmes
+
+| v2                | v3                               |
+|-------------------|----------------------------------|
+| `progid`          | `id`                             |
+| `progcode`        | `code`                           |
+| `progtitle`       | `title`                          |
+| `progversion`     | `version`                        |
+| `progdescription` | `description`                    |
+| `progefts`        | *(removed; see duration fields)* |
+
+------------------------------------------------------------------------
+
+## Updating code that references column names
+
+Because column names differ, downstream code referencing specific column
+names will need updating when switching from v2 to v3:
+
+``` r
+
+# v2
+students |> dplyr::select(id, forename, surname, dob, email1)
+
+# v3
+students |> dplyr::select(id, first_name, surname, date_of_birth, email_primary)
+```
+
+To support both versions in the same codebase, check `con$api_version`:
+
+``` r
+
+name_col <- if (con$api_version == "v3") "first_name" else "forename"
+students[[name_col]]
+```
+
+------------------------------------------------------------------------
+
+## Schema validation warnings
+
+When the live API returns fewer fields than the package’s built-in
+schema snapshot (derived from the OpenAPI specs), selmaR emits a
+`cli_warn()` listing the missing fields:
+
+    Warning: SELMA students (v2): 3 expected fields missing from response.
+    ℹ forename, dob, email1
+    ℹ The SELMA API may have changed. Check for a package update.
+
+This is informational — the function still returns whatever data the API
+provided. Suppress with
+[`suppressWarnings()`](https://rdrr.io/r/base/warning.html) once you
+have confirmed the field removals are expected for your instance.

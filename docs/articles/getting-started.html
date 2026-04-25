@@ -84,7 +84,7 @@
 </h2>
 <p>selmaR is an R client for the <a href="https://selma.co.nz/" class="external-link">SELMA</a> student management system API.
 SELMA is used by Private Training Establishments (PTEs) and Tertiary
-Education Organisations (TEOs) across New Zealand.</p>
+Education Organisations (TEOs) across New Zealand and Australia.</p>
 <p>This package handles:</p>
 <ul>
 <li>
@@ -94,8 +94,11 @@ your session</li>
 <strong>Pagination</strong> — automatic Hydra JSON-LD page
 traversal</li>
 <li>
-<strong>Data cleaning</strong> — removes API artifacts, applies
-<code>clean_names()</code>, converts IDs to character</li>
+<strong>Data cleaning</strong> — strips JSON-LD metadata, applies
+<code>clean_names()</code>, normalises IRI references</li>
+<li>
+<strong>API version routing</strong> — works transparently on both
+SELMA v2 and v3 instances</li>
 <li>
 <strong>Caching</strong> — optional RDS caching with configurable
 TTL</li>
@@ -118,9 +121,11 @@ to <code>.gitignore</code></strong>):</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pcstrategyandopsco.github.io/selmaR/">selmaR</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/selma_connect.html">selma_connect</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>That’s it. Every <code>selma_*()</code> function now uses your
-connection automatically.</p>
+<span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_connect.html">selma_connect</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>The API version is auto-detected at connect time. Store the
+connection object and pass it to fetch functions, or call
+<code><a href="../reference/selma_connect.html">selma_connect()</a></code> without assignment to store it
+globally.</p>
 </div>
 <div class="section level3">
 <h3 id="environment-variables">Environment Variables<a class="anchor" aria-label="anchor" href="#environment-variables"></a>
@@ -134,125 +139,156 @@ SELMA_PASSWORD=your_password</code></pre>
 <h3 id="direct-credentials">Direct Credentials<a class="anchor" aria-label="anchor" href="#direct-credentials"></a>
 </h3>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/selma_connect.html">selma_connect</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_connect.html">selma_connect</a></span><span class="op">(</span></span>
 <span>  base_url <span class="op">=</span> <span class="st">"https://myorg.selma.co.nz/"</span>,</span>
-<span>  email <span class="op">=</span> <span class="st">"api@selma.co.nz"</span>,</span>
+<span>  email    <span class="op">=</span> <span class="st">"api@selma.co.nz"</span>,</span>
 <span>  password <span class="op">=</span> <span class="st">"your_password"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Credentials are resolved in priority order: direct arguments &gt;
 config.yml &gt; environment variables.</p>
+<hr>
 </div>
 </div>
 <div class="section level2">
 <h2 id="fetching-data">Fetching Data<a class="anchor" aria-label="anchor" href="#fetching-data"></a>
 </h2>
 <p>All fetch functions return tibbles with <code>clean_names()</code>
-applied:</p>
+applied. The integer primary key is always in <code>id</code>. In SELMA
+v3, foreign key columns (e.g. <code>student</code>, <code>intake</code>,
+<code>enrolment</code>) contain the trailing ID segment extracted from
+their IRI reference (e.g. <code>"/api/students/42"</code> →
+<code>"42"</code> as a character string).</p>
+<div class="section level3">
+<h3 id="core-entities">Core Entities<a class="anchor" aria-label="anchor" href="#core-entities"></a>
+</h3>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">students</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_students.html">selma_students</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">enrolments</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_enrolments.html">selma_enrolments</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">intakes</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_intakes.html">selma_intakes</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">components</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_components.html">selma_components</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">programmes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_programmes.html">selma_programmes</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">students</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_students.html">selma_students</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">enrolments</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_enrolments.html">selma_enrolments</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">intakes</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_intakes.html">selma_intakes</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">components</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_components.html">selma_components</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">programmes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_programmes.html">selma_programmes</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span></code></pre></div>
+</div>
 <div class="section level3">
 <h3 id="filtering-at-the-api-level">Filtering at the API Level<a class="anchor" aria-label="anchor" href="#filtering-at-the-api-level"></a>
 </h3>
-<p>Most fetch functions accept optional filter parameters so you only
-download what you need. Filtering happens server-side, reducing both API
-traffic and memory usage:</p>
+<p>The core entity functions (<code>selma_students</code>,
+<code>selma_enrolments</code>, <code>selma_intakes</code>,
+<code>selma_components</code>, <code>selma_programmes</code>) use a
+<code>filter</code> list for server-side filtering. Valid parameter
+names are validated against the OpenAPI spec for your API version —
+unknown params warn and are dropped.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Students by surname or forename</span></span>
-<span><span class="va">smiths</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_students.html">selma_students</a></span><span class="op">(</span>surname <span class="op">=</span> <span class="st">"Smith"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Students by surname (v2) or first name (v3)</span></span>
+<span><span class="va">smiths</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_students.html">selma_students</a></span><span class="op">(</span><span class="va">con</span>, filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>surname <span class="op">=</span> <span class="st">"Smith"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Components for a specific student or enrolment</span></span>
-<span><span class="va">comps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_components.html">selma_components</a></span><span class="op">(</span>student_id <span class="op">=</span> <span class="st">"123"</span><span class="op">)</span></span>
-<span><span class="va">comps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_components.html">selma_components</a></span><span class="op">(</span>enrol_id <span class="op">=</span> <span class="st">"456"</span><span class="op">)</span></span>
+<span><span class="co"># v3: filter by first_name</span></span>
+<span><span class="va">smiths</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_students.html">selma_students</a></span><span class="op">(</span><span class="va">con</span>, filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>first_name <span class="op">=</span> <span class="st">"Alice"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Intakes by programme, status, or date range</span></span>
-<span><span class="va">upcoming</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_intakes.html">selma_intakes</a></span><span class="op">(</span>prog_id <span class="op">=</span> <span class="st">"42"</span>, start_after <span class="op">=</span> <span class="st">"2025-01-01"</span><span class="op">)</span></span>
+<span><span class="co"># Enrolments for a specific intake or student (v3 only)</span></span>
+<span><span class="va">enrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_enrolments.html">selma_enrolments</a></span><span class="op">(</span><span class="va">con</span>, filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>intake <span class="op">=</span> <span class="st">"123"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">enrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_enrolments.html">selma_enrolments</a></span><span class="op">(</span><span class="va">con</span>, filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>student <span class="op">=</span> <span class="st">"456"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Active programmes only</span></span>
-<span><span class="va">active_progs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_programmes.html">selma_programmes</a></span><span class="op">(</span>status <span class="op">=</span> <span class="st">"Active"</span><span class="op">)</span></span>
+<span><span class="co"># Components for a specific enrolment</span></span>
+<span><span class="va">comps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_components.html">selma_components</a></span><span class="op">(</span><span class="va">con</span>, filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>enrolment <span class="op">=</span> <span class="st">"456"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Addresses for a specific student, contact, or organisation</span></span>
-<span><span class="va">addrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_addresses.html">selma_addresses</a></span><span class="op">(</span>student_id <span class="op">=</span> <span class="st">"123"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Contacts filtered by relationship</span></span>
-<span><span class="va">emergency</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_student_contacts.html">selma_student_contacts</a></span><span class="op">(</span>student_id <span class="op">=</span> <span class="st">"123"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Organisations by name or registration number</span></span>
-<span><span class="va">orgs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_organisations.html">selma_organisations</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Example Ltd"</span><span class="op">)</span></span></code></pre></div>
-<p>See each function’s help page (<code><a href="../reference/selma_students.html">?selma_students</a></code>,
-<code><a href="../reference/selma_intakes.html">?selma_intakes</a></code>, etc.) for the full list of available filter
-parameters.</p>
-<p><strong>Note:</strong> When filter parameters are supplied, caching
-is automatically bypassed — filtered results represent a subset and
-should not overwrite the full cached dataset.</p>
+<span><span class="co"># Intakes by date range</span></span>
+<span><span class="va">upcoming</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_intakes.html">selma_intakes</a></span><span class="op">(</span><span class="va">con</span>, filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>`start_date[after]` <span class="op">=</span> <span class="st">"2025-01-01"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>To see valid filter parameters for a given function and API
+version:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Valid params are in the schema registry</span></span>
+<span><span class="fu">selmaR</span><span class="fu">:::</span><span class="va">.selma_schemas</span><span class="op">$</span><span class="va">v3</span><span class="op">$</span><span class="va">students</span><span class="op">$</span><span class="va">params</span></span>
+<span><span class="fu">selmaR</span><span class="fu">:::</span><span class="va">.selma_schemas</span><span class="op">$</span><span class="va">v3</span><span class="op">$</span><span class="va">enrolments</span><span class="op">$</span><span class="va">params</span></span></code></pre></div>
+<p><strong>Note:</strong> Caching is automatically bypassed when a
+filter is applied — filtered results represent a subset and must not
+overwrite the full cached dataset.</p>
 </div>
 <div class="section level3">
 <h3 id="fetching-a-single-record">Fetching a Single Record<a class="anchor" aria-label="anchor" href="#fetching-a-single-record"></a>
 </h3>
-<p>Use <code><a href="../reference/selma_get_one.html">selma_get_one()</a></code> to retrieve a single record by ID
-from any endpoint:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">student</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_get_one.html">selma_get_one</a></span><span class="op">(</span><span class="st">"students"</span>, <span class="st">"123"</span><span class="op">)</span></span>
-<span><span class="va">intake</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_get_one.html">selma_get_one</a></span><span class="op">(</span><span class="st">"intakes"</span>, <span class="st">"456"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">student</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_get_one.html">selma_get_one</a></span><span class="op">(</span><span class="st">"students"</span>,   <span class="st">"123"</span>, <span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">enrolment</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_get_one.html">selma_get_one</a></span><span class="op">(</span><span class="st">"enrolments"</span>, <span class="st">"456"</span>, <span class="va">con</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="beyond-the-core-entities">Beyond the Core Entities<a class="anchor" aria-label="anchor" href="#beyond-the-core-entities"></a>
 </h3>
-<p>selmaR wraps the full SELMA API — notes, contacts, addresses,
-classes, organisations, campuses, awards, custom fields, and all
+<p>selmaR wraps a broad set of SELMA endpoints — notes, contacts,
+addresses, classes, organisations, campuses, awards, and all
 reference/lookup tables:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">notes</span>      <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_notes.html">selma_notes</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">addresses</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_addresses.html">selma_addresses</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">classes</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_classes.html">selma_classes</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">campuses</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_campuses.html">selma_campuses</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">orgs</span>       <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_organisations.html">selma_organisations</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">attempts</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_component_attempts.html">selma_component_attempts</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">contacts</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_contacts.html">selma_contacts</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">notes</span>      <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_notes.html">selma_notes</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">addresses</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_addresses.html">selma_addresses</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">classes</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_classes.html">selma_classes</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">campuses</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_campuses.html">selma_campuses</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">orgs</span>       <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_organisations.html">selma_organisations</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">contacts</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_contacts.html">selma_contacts</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">attempts</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_component_attempts.html">selma_component_attempts</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="custom-fields">Custom Fields<a class="anchor" aria-label="anchor" href="#custom-fields"></a>
+<h3 id="custom-fields-v2-only">Custom Fields (v2 only)<a class="anchor" aria-label="anchor" href="#custom-fields-v2-only"></a>
 </h3>
-<p>Retrieve custom field definitions and values:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Custom field tab definitions</span></span>
-<span><span class="va">fields</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_custom_fields.html">selma_custom_fields</a></span><span class="op">(</span><span class="op">)</span></span>
+<p>The custom field value endpoints (<code>app/student/custom/</code>,
+<code>app/enrolment/custom/</code>) are v2-only. Calling them on a v3
+connection raises an informative error.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># v2 only — aborts with a clear message on v3</span></span>
+<span><span class="va">student_cf</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_student_custom_fields.html">selma_student_custom_fields</a></span><span class="op">(</span><span class="st">"123"</span>, <span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">enrol_cf</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_enrolment_custom_fields.html">selma_enrolment_custom_fields</a></span><span class="op">(</span><span class="st">"456"</span>, <span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">comp_cf</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_component_custom_fields.html">selma_component_custom_fields</a></span><span class="op">(</span><span class="st">"456"</span>, <span class="va">con</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="intake-enrolments-v2-only">Intake Enrolments (v2 only)<a class="anchor" aria-label="anchor" href="#intake-enrolments-v2-only"></a>
+</h3>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># v2 only</span></span>
+<span><span class="va">ie</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_intake_enrolments.html">selma_intake_enrolments</a></span><span class="op">(</span>intake_id <span class="op">=</span> <span class="fl">123</span>, con <span class="op">=</span> <span class="va">con</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Custom field values for a specific student or enrolment</span></span>
-<span><span class="va">student_cf</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_student_custom_fields.html">selma_student_custom_fields</a></span><span class="op">(</span><span class="st">"123"</span><span class="op">)</span></span>
-<span><span class="va">enrol_cf</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_enrolment_custom_fields.html">selma_enrolment_custom_fields</a></span><span class="op">(</span><span class="st">"456"</span><span class="op">)</span></span>
-<span><span class="va">comp_cf</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_component_custom_fields.html">selma_component_custom_fields</a></span><span class="op">(</span><span class="st">"456"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># v3 equivalent — use selma_enrolments() with a filter</span></span>
+<span><span class="va">enrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_enrolments.html">selma_enrolments</a></span><span class="op">(</span><span class="va">con</span>, filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>intake <span class="op">=</span> <span class="st">"123"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="lookup-reference-tables">Lookup / Reference Tables<a class="anchor" aria-label="anchor" href="#lookup-reference-tables"></a>
 </h3>
 <p>SELMA exposes many reference code tables. selmaR wraps them all:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ethnicities</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_ethnicities.html">selma_ethnicities</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">countries</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_countries.html">selma_countries</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">genders</span>     <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_genders.html">selma_genders</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">visa_types</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_visa_types.html">selma_visa_types</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">iwis</span>        <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_nz_iwis.html">selma_nz_iwis</a></span><span class="op">(</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ethnicities</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_ethnicities.html">selma_ethnicities</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">countries</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_countries.html">selma_countries</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">genders</span>     <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_genders.html">selma_genders</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">visa_types</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_visa_types.html">selma_visa_types</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span><span class="va">iwis</span>        <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_nz_iwis.html">selma_nz_iwis</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
 <span><span class="co"># ... and many more — see the package reference index</span></span></code></pre></div>
+<hr>
 </div>
-<div class="section level3">
-<h3 id="intake-enrolments-nested-data">Intake Enrolments (Nested Data)<a class="anchor" aria-label="anchor" href="#intake-enrolments-nested-data"></a>
-</h3>
-<p>The intake enrolments endpoint returns nested JSON for a specific
-intake:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ie</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_intake_enrolments.html">selma_intake_enrolments</a></span><span class="op">(</span>intake_id <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span></code></pre></div>
 </div>
+<div class="section level2">
+<h2 id="querying-endpoints-without-a-named-function">Querying Endpoints Without a Named Function<a class="anchor" aria-label="anchor" href="#querying-endpoints-without-a-named-function"></a>
+</h2>
+<p>SELMA v3 has over 200 collection endpoints. selmaR does not wrap all
+of them. Use <code><a href="../reference/make_entity_fetcher.html">make_entity_fetcher()</a></code> to create a function for
+any endpoint, or <code><a href="../reference/selma_get.html">selma_get()</a></code> for a one-off query.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Create a reusable function for an endpoint not yet in the package:</span></span>
+<span><span class="va">selma_events</span>     <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_entity_fetcher.html">make_entity_fetcher</a></span><span class="op">(</span><span class="st">"events"</span><span class="op">)</span></span>
+<span><span class="va">selma_placements</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_entity_fetcher.html">make_entity_fetcher</a></span><span class="op">(</span><span class="st">"placements"</span><span class="op">)</span></span>
+<span><span class="va">selma_visas</span>      <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_entity_fetcher.html">make_entity_fetcher</a></span><span class="op">(</span><span class="st">"visas"</span><span class="op">)</span></span>
+<span><span class="va">selma_documents</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_entity_fetcher.html">make_entity_fetcher</a></span><span class="op">(</span><span class="st">"documents"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">events</span> <span class="op">&lt;-</span> <span class="fu">selma_events</span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># For a one-off query:</span></span>
+<span><span class="va">passports</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_get.html">selma_get</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"passports"</span><span class="op">)</span></span></code></pre></div>
+<p>The endpoint name should be the v3 path segment
+(e.g. <code>"events"</code> for <code>/api/events</code>). See the SELMA
+v3 OpenAPI spec for the full list.</p>
+<hr>
 </div>
 <div class="section level2">
 <h2 id="joining-entities">Joining Entities<a class="anchor" aria-label="anchor" href="#joining-entities"></a>
 </h2>
 <p>Use the convenience join functions — no need to remember join
 keys:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Build a full student pipeline in one line</span></span>
@@ -270,48 +306,52 @@ keys:</p>
 <span></span>
 <span><span class="co"># Full component pipeline: components + enrolments + students + intakes</span></span>
 <span><span class="va">full</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_component_pipeline.html">selma_component_pipeline</a></span><span class="op">(</span><span class="va">components</span>, <span class="va">enrolments</span>, <span class="va">students</span>, <span class="va">intakes</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Note on joining v3 data:</strong> In v3, foreign key columns
+like <code>student</code> and <code>intake</code> contain character IDs
+(e.g. <code>"42"</code>), while primary key <code>id</code> columns are
+integers. Use <code><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer()</a></code> or <code><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character()</a></code>
+to align types before joining:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">enrolments</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>student_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">student</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">students</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"student_id"</span> <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<hr>
 </div>
 <div class="section level2">
 <h2 id="using-the-cache">Using the Cache<a class="anchor" aria-label="anchor" href="#using-the-cache"></a>
 </h2>
-<p>Enable caching to avoid slow API calls on repeated runs:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">students</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_students.html">selma_students</a></span><span class="op">(</span>cache <span class="op">=</span> <span class="cn">TRUE</span>, cache_dir <span class="op">=</span> <span class="st">"data"</span>, cache_hours <span class="op">=</span> <span class="fl">24</span><span class="op">)</span></span></code></pre></div>
+<p>Enable caching to avoid slow API calls on repeated runs. The cache
+stores the full unfiltered dataset and is bypassed automatically when
+filters are applied.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">students</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_students.html">selma_students</a></span><span class="op">(</span><span class="va">con</span>, cache <span class="op">=</span> <span class="cn">TRUE</span>, cache_dir <span class="op">=</span> <span class="st">"data"</span>, cache_hours <span class="op">=</span> <span class="fl">24</span><span class="op">)</span></span>
+<span><span class="va">enrolments</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_enrolments.html">selma_enrolments</a></span><span class="op">(</span><span class="va">con</span>, cache <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="status-code-constants">Status Code Constants<a class="anchor" aria-label="anchor" href="#status-code-constants"></a>
+</h2>
+<p>Use the exported constants rather than raw strings:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Active funded enrolments (v3 uses enrolment_status; v2 uses enrstatus)</span></span>
+<span><span class="va">enrolments</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">enrolment_status</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">SELMA_STATUS_CONFIRMED</span>, <span class="va">SELMA_STATUS_COMPLETED</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># All funded statuses (including withdrawn)</span></span>
+<span><span class="va">SELMA_ALL_FUNDED_STATUSES</span></span>
+<span><span class="co">#&gt; [1] "C"  "FC" "FI" "WR" "WS"</span></span></code></pre></div>
+<hr>
 </div>
 <div class="section level2">
 <h2 id="url-builders">URL Builders<a class="anchor" aria-label="anchor" href="#url-builders"></a>
 </h2>
-<p>Generate links to SELMA records:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<p>Generate deep links to SELMA records:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/selma_student_url.html">selma_student_url</a></span><span class="op">(</span><span class="fl">123</span>, <span class="st">"https://myorg.selma.co.nz/"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; "https://myorg.selma.co.nz/en/admin/student/123/1"</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/selma_enrolment_url.html">selma_enrolment_url</a></span><span class="op">(</span><span class="fl">456</span>, <span class="st">"https://myorg.selma.co.nz/"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; "https://myorg.selma.co.nz/en/admin/enrolment/456/1"</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="status-code-constants">Status Code Constants<a class="anchor" aria-label="anchor" href="#status-code-constants"></a>
-</h2>
-<p>Use the exported constants for filtering:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Active funded enrolments</span></span>
-<span><span class="va">enrolments</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">enrstatus</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">SELMA_STATUS_CONFIRMED</span>, <span class="va">SELMA_STATUS_COMPLETED</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># All funded statuses (including withdrawn)</span></span>
-<span><span class="va">SELMA_ALL_FUNDED_STATUSES</span></span>
-<span><span class="co">#&gt; [1] "C"  "FC" "FI" "WR" "WS"</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="generic-endpoint-access">Generic Endpoint Access<a class="anchor" aria-label="anchor" href="#generic-endpoint-access"></a>
-</h2>
-<p>For any collection endpoint, you can use <code><a href="../reference/selma_get.html">selma_get()</a></code>
-directly:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_get.html">selma_get</a></span><span class="op">(</span>endpoint <span class="op">=</span> <span class="st">"some_endpoint"</span><span class="op">)</span></span></code></pre></div>
-<p>For a single record by ID, use <code><a href="../reference/selma_get_one.html">selma_get_one()</a></code>:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">record</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_get_one.html">selma_get_one</a></span><span class="op">(</span><span class="st">"students"</span>, <span class="st">"123"</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

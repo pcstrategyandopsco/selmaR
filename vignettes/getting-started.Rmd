@@ -19,13 +19,14 @@ knitr::opts_chunk$set(
 
 selmaR is an R client for the [SELMA](https://selma.co.nz/) student management
 system API. SELMA is used by Private Training Establishments (PTEs) and Tertiary
-Education Organisations (TEOs) across New Zealand.
+Education Organisations (TEOs) across New Zealand and Australia.
 
 This package handles:
 
 - **Authentication** — connect once and all functions use your session
 - **Pagination** — automatic Hydra JSON-LD page traversal
-- **Data cleaning** — removes API artifacts, applies `clean_names()`, converts IDs to character
+- **Data cleaning** — strips JSON-LD metadata, applies `clean_names()`, normalises IRI references
+- **API version routing** — works transparently on both SELMA v2 and v3 instances
 - **Caching** — optional RDS caching with configurable TTL
 
 ## Setup
@@ -47,10 +48,12 @@ Then connect:
 ```{r}
 library(selmaR)
 
-selma_connect()
+con <- selma_connect()
 ```
 
-That's it. Every `selma_*()` function now uses your connection automatically.
+The API version is auto-detected at connect time. Store the connection object
+and pass it to fetch functions, or call `selma_connect()` without assignment to
+store it globally.
 
 ### Environment Variables
 
@@ -65,101 +68,113 @@ SELMA_PASSWORD=your_password
 ### Direct Credentials
 
 ```{r}
-selma_connect(
+con <- selma_connect(
   base_url = "https://myorg.selma.co.nz/",
-  email = "api@selma.co.nz",
+  email    = "api@selma.co.nz",
   password = "your_password"
 )
 ```
 
-Credentials are resolved in priority order: direct arguments > config.yml > environment variables.
+Credentials are resolved in priority order: direct arguments > config.yml >
+environment variables.
+
+---
 
 ## Fetching Data
 
-All fetch functions return tibbles with `clean_names()` applied:
+All fetch functions return tibbles with `clean_names()` applied. The integer
+primary key is always in `id`. In SELMA v3, foreign key columns (e.g. `student`,
+`intake`, `enrolment`) contain the trailing ID segment extracted from their
+IRI reference (e.g. `"/api/students/42"` → `"42"` as a character string).
+
+### Core Entities
 
 ```{r}
-students   <- selma_students()
-enrolments <- selma_enrolments()
-intakes    <- selma_intakes()
-components <- selma_components()
-programmes <- selma_programmes()
+students   <- selma_students(con)
+enrolments <- selma_enrolments(con)
+intakes    <- selma_intakes(con)
+components <- selma_components(con)
+programmes <- selma_programmes(con)
 ```
 
 ### Filtering at the API Level
 
-Most fetch functions accept optional filter parameters so you only download
-what you need. Filtering happens server-side, reducing both API traffic and
-memory usage:
+The core entity functions (`selma_students`, `selma_enrolments`,
+`selma_intakes`, `selma_components`, `selma_programmes`) use a `filter` list
+for server-side filtering. Valid parameter names are validated against the
+OpenAPI spec for your API version — unknown params warn and are dropped.
 
 ```{r}
-# Students by surname or forename
-smiths <- selma_students(surname = "Smith")
+# Students by surname (v2) or first name (v3)
+smiths <- selma_students(con, filter = list(surname = "Smith"))
 
-# Components for a specific student or enrolment
-comps <- selma_components(student_id = "123")
-comps <- selma_components(enrol_id = "456")
+# v3: filter by first_name
+smiths <- selma_students(con, filter = list(first_name = "Alice"))
 
-# Intakes by programme, status, or date range
-upcoming <- selma_intakes(prog_id = "42", start_after = "2025-01-01")
+# Enrolments for a specific intake or student (v3 only)
+enrs <- selma_enrolments(con, filter = list(intake = "123"))
+enrs <- selma_enrolments(con, filter = list(student = "456"))
 
-# Active programmes only
-active_progs <- selma_programmes(status = "Active")
+# Components for a specific enrolment
+comps <- selma_components(con, filter = list(enrolment = "456"))
 
-# Addresses for a specific student, contact, or organisation
-addrs <- selma_addresses(student_id = "123")
-
-# Contacts filtered by relationship
-emergency <- selma_student_contacts(student_id = "123")
-
-# Organisations by name or registration number
-orgs <- selma_organisations(name = "Example Ltd")
+# Intakes by date range
+upcoming <- selma_intakes(con, filter = list(`start_date[after]` = "2025-01-01"))
 ```
 
-See each function's help page (`?selma_students`, `?selma_intakes`, etc.)
-for the full list of available filter parameters.
+To see valid filter parameters for a given function and API version:
 
-**Note:** When filter parameters are supplied, caching is automatically
-bypassed — filtered results represent a subset and should not overwrite the
-full cached dataset.
+```{r}
+# Valid params are in the schema registry
+selmaR:::.selma_schemas$v3$students$params
+selmaR:::.selma_schemas$v3$enrolments$params
+```
+
+**Note:** Caching is automatically bypassed when a filter is applied — filtered
+results represent a subset and must not overwrite the full cached dataset.
 
 ### Fetching a Single Record
 
-Use `selma_get_one()` to retrieve a single record by ID from any endpoint:
-
 ```{r}
-student <- selma_get_one("students", "123")
-intake  <- selma_get_one("intakes", "456")
+student  <- selma_get_one("students",   "123", con)
+enrolment <- selma_get_one("enrolments", "456", con)
 ```
 
 ### Beyond the Core Entities
 
-selmaR wraps the full SELMA API — notes, contacts, addresses, classes,
-organisations, campuses, awards, custom fields, and all reference/lookup
-tables:
+selmaR wraps a broad set of SELMA endpoints — notes, contacts, addresses,
+classes, organisations, campuses, awards, and all reference/lookup tables:
 
 ```{r}
-notes      <- selma_notes()
-addresses  <- selma_addresses()
-classes    <- selma_classes()
-campuses   <- selma_campuses()
-orgs       <- selma_organisations()
-attempts   <- selma_component_attempts()
-contacts   <- selma_contacts()
+notes      <- selma_notes(con)
+addresses  <- selma_addresses(con)
+classes    <- selma_classes(con)
+campuses   <- selma_campuses(con)
+orgs       <- selma_organisations(con)
+contacts   <- selma_contacts(con)
+attempts   <- selma_component_attempts(con)
 ```
 
-### Custom Fields
+### Custom Fields (v2 only)
 
-Retrieve custom field definitions and values:
+The custom field value endpoints (`app/student/custom/`, `app/enrolment/custom/`)
+are v2-only. Calling them on a v3 connection raises an informative error.
 
 ```{r}
-# Custom field tab definitions
-fields <- selma_custom_fields()
+# v2 only — aborts with a clear message on v3
+student_cf <- selma_student_custom_fields("123", con)
+enrol_cf   <- selma_enrolment_custom_fields("456", con)
+comp_cf    <- selma_component_custom_fields("456", con)
+```
 
-# Custom field values for a specific student or enrolment
-student_cf <- selma_student_custom_fields("123")
-enrol_cf   <- selma_enrolment_custom_fields("456")
-comp_cf    <- selma_component_custom_fields("456")
+### Intake Enrolments (v2 only)
+
+```{r}
+# v2 only
+ie <- selma_intake_enrolments(intake_id = 123, con = con)
+
+# v3 equivalent — use selma_enrolments() with a filter
+enrs <- selma_enrolments(con, filter = list(intake = "123"))
 ```
 
 ### Lookup / Reference Tables
@@ -167,21 +182,39 @@ comp_cf    <- selma_component_custom_fields("456")
 SELMA exposes many reference code tables. selmaR wraps them all:
 
 ```{r}
-ethnicities <- selma_ethnicities()
-countries   <- selma_countries()
-genders     <- selma_genders()
-visa_types  <- selma_visa_types()
-iwis        <- selma_nz_iwis()
+ethnicities <- selma_ethnicities(con)
+countries   <- selma_countries(con)
+genders     <- selma_genders(con)
+visa_types  <- selma_visa_types(con)
+iwis        <- selma_nz_iwis(con)
 # ... and many more — see the package reference index
 ```
 
-### Intake Enrolments (Nested Data)
+---
 
-The intake enrolments endpoint returns nested JSON for a specific intake:
+## Querying Endpoints Without a Named Function
+
+SELMA v3 has over 200 collection endpoints. selmaR does not wrap all of them.
+Use `make_entity_fetcher()` to create a function for any endpoint, or
+`selma_get()` for a one-off query.
 
 ```{r}
-ie <- selma_intake_enrolments(intake_id = 123)
+# Create a reusable function for an endpoint not yet in the package:
+selma_events     <- make_entity_fetcher("events")
+selma_placements <- make_entity_fetcher("placements")
+selma_visas      <- make_entity_fetcher("visas")
+selma_documents  <- make_entity_fetcher("documents")
+
+events <- selma_events(con)
+
+# For a one-off query:
+passports <- selma_get(con, "passports")
 ```
+
+The endpoint name should be the v3 path segment (e.g. `"events"` for
+`/api/events`). See the SELMA v3 OpenAPI spec for the full list.
+
+---
 
 ## Joining Entities
 
@@ -207,16 +240,50 @@ selma_join_attempts(attempts, components)     # attempts + component details
 full <- selma_component_pipeline(components, enrolments, students, intakes)
 ```
 
+**Note on joining v3 data:** In v3, foreign key columns like `student` and
+`intake` contain character IDs (e.g. `"42"`), while primary key `id` columns
+are integers. Use `as.integer()` or `as.character()` to align types before
+joining:
+
+```{r}
+enrolments |>
+  dplyr::mutate(student_id = as.integer(student)) |>
+  dplyr::left_join(students, by = c("student_id" = "id"))
+```
+
+---
+
 ## Using the Cache
 
-Enable caching to avoid slow API calls on repeated runs:
+Enable caching to avoid slow API calls on repeated runs. The cache stores the
+full unfiltered dataset and is bypassed automatically when filters are applied.
+
 ```{r}
-students <- selma_students(cache = TRUE, cache_dir = "data", cache_hours = 24)
+students   <- selma_students(con, cache = TRUE, cache_dir = "data", cache_hours = 24)
+enrolments <- selma_enrolments(con, cache = TRUE)
 ```
+
+---
+
+## Status Code Constants
+
+Use the exported constants rather than raw strings:
+
+```{r}
+# Active funded enrolments (v3 uses enrolment_status; v2 uses enrstatus)
+enrolments |>
+  dplyr::filter(enrolment_status %in% c(SELMA_STATUS_CONFIRMED, SELMA_STATUS_COMPLETED))
+
+# All funded statuses (including withdrawn)
+SELMA_ALL_FUNDED_STATUSES
+#> [1] "C"  "FC" "FI" "WR" "WS"
+```
+
+---
 
 ## URL Builders
 
-Generate links to SELMA records:
+Generate deep links to SELMA records:
 
 ```{r}
 selma_student_url(123, "https://myorg.selma.co.nz/")
@@ -224,32 +291,4 @@ selma_student_url(123, "https://myorg.selma.co.nz/")
 
 selma_enrolment_url(456, "https://myorg.selma.co.nz/")
 #> "https://myorg.selma.co.nz/en/admin/enrolment/456/1"
-```
-
-## Status Code Constants
-
-Use the exported constants for filtering:
-
-```{r}
-# Active funded enrolments
-enrolments |>
-  filter(enrstatus %in% c(SELMA_STATUS_CONFIRMED, SELMA_STATUS_COMPLETED))
-
-# All funded statuses (including withdrawn)
-SELMA_ALL_FUNDED_STATUSES
-#> [1] "C"  "FC" "FI" "WR" "WS"
-```
-
-## Generic Endpoint Access
-
-For any collection endpoint, you can use `selma_get()` directly:
-
-```{r}
-data <- selma_get(endpoint = "some_endpoint")
-```
-
-For a single record by ID, use `selma_get_one()`:
-
-```{r}
-record <- selma_get_one("students", "123")
 ```

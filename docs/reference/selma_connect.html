@@ -61,6 +61,7 @@ automatically — no need to pass it explicitly.</p>
 <span>  base_url <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  email <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  password <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  api_version <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  config_file <span class="op">=</span> <span class="st">"config.yml"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -81,6 +82,12 @@ automatically — no need to pass it explicitly.</p>
 <dd><p>API login password.</p></dd>
 
 
+<dt id="arg-api-version">api_version<a class="anchor" aria-label="anchor" href="#arg-api-version"></a></dt>
+<dd><p>SELMA API version: <code>"v2"</code>, <code>"v3"</code>, or <code>NULL</code> (default)
+to auto-detect. A SELMA instance runs one version — the value is stored
+on the connection object and used for all subsequent requests.</p></dd>
+
+
 <dt id="arg-config-file">config_file<a class="anchor" aria-label="anchor" href="#arg-config-file"></a></dt>
 <dd><p>Path to a config YAML file (default <code>"config.yml"</code>).
 Set to <code>NULL</code> to skip config file lookup.</p></dd>
@@ -94,34 +101,52 @@ stored in the package environment for automatic use by all fetch functions.</p>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Credentials are resolved in order:</p><ol><li><p><strong>Direct arguments</strong> — <code>base_url</code>, <code>email</code>, <code>password</code></p></li>
-<li><p><strong>config.yml</strong> — via the config package (<code>selma</code> key; see below)</p></li>
-<li><p><strong>Environment variables</strong> — <code>SELMA_BASE_URL</code>, <code>SELMA_EMAIL</code>, <code>SELMA_PASSWORD</code></p></li>
+<li><p><strong>config.yml</strong> — version-specific block (<code>selma.v2</code> or <code>selma.v3</code>) if
+<code>api_version</code> is set, then flat <code>selma</code> block as fallback</p></li>
+<li><p><strong>Environment variables</strong> — version-specific (<code>SELMA_V3_EMAIL</code> etc.)
+then generic (<code>SELMA_EMAIL</code> etc.)</p></li>
 </ol></div>
     <div class="section level2">
     <h2 id="config-yml">config.yml<a class="anchor" aria-label="anchor" href="#config-yml"></a></h2>
 
 
-<p>Create a <code>config.yml</code> in your project root (add to <code>.gitignore</code>!):</p>
+<p>Create a <code>config.yml</code> in your project root (add to <code>.gitignore</code>!).</p>
+<p><strong>Single version</strong> (flat structure, backward-compatible):</p>
 <p></p><div class="sourceCode yaml"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">default</span><span class="kw">:</span></span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="at">  </span><span class="fu">selma</span><span class="kw">:</span></span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="at">    </span><span class="fu">base_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://myorg.selma.co.nz/"</span></span>
 <span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="at">    </span><span class="fu">email</span><span class="kw">:</span><span class="at"> </span><span class="st">"api@selma.co.nz"</span></span>
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="at">    </span><span class="fu">password</span><span class="kw">:</span><span class="at"> </span><span class="st">"secret"</span></span></code></pre><p></p></div>
+<p><strong>Dual version</strong> (v2 and v3 credentials stored separately):</p>
+<p></p><div class="sourceCode yaml"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">default</span><span class="kw">:</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="at">  </span><span class="fu">selma</span><span class="kw">:</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="at">    </span><span class="fu">v2</span><span class="kw">:</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="at">      </span><span class="fu">base_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://myorg.selma.co.nz/"</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="at">      </span><span class="fu">email</span><span class="kw">:</span><span class="at"> </span><span class="st">"v2_api@selma.co.nz"</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="at">      </span><span class="fu">password</span><span class="kw">:</span><span class="at"> </span><span class="st">"v2secret"</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="at">    </span><span class="fu">v3</span><span class="kw">:</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="at">      </span><span class="fu">base_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://myorg.selma.app/"</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="at">      </span><span class="fu">email</span><span class="kw">:</span><span class="at"> </span><span class="st">"v3_api@selma.app"</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="at">      </span><span class="fu">password</span><span class="kw">:</span><span class="at"> </span><span class="st">"v3secret"</span></span></code></pre><p></p></div>
+<p>When <code>api_version = "v3"</code> is set (or auto-detected), selmaR reads
+<code>selma.v3.email</code> / <code>selma.v3.password</code> first, falling back to the flat
+<code>selma.email</code> / <code>selma.password</code> if not present.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Connect once — all functions use it automatically</span></span></span>
+<span class="r-in"><span><span class="co"># Connect once — all functions use it automatically (api_version auto-detected)</span></span></span>
 <span class="r-in"><span><span class="fu">selma_connect</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">students</span> <span class="op">&lt;-</span> <span class="fu"><a href="selma_students.html">selma_students</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">enrolments</span> <span class="op">&lt;-</span> <span class="fu"><a href="selma_enrolments.html">selma_enrolments</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Or pass credentials directly</span></span></span>
+<span class="r-in"><span><span class="co"># Specify API version explicitly</span></span></span>
 <span class="r-in"><span><span class="fu">selma_connect</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  base_url <span class="op">=</span> <span class="st">"https://myorg.selma.co.nz/"</span>,</span></span>
 <span class="r-in"><span>  email <span class="op">=</span> <span class="st">"api@selma.co.nz"</span>,</span></span>
-<span class="r-in"><span>  password <span class="op">=</span> <span class="st">"secret"</span></span></span>
+<span class="r-in"><span>  password <span class="op">=</span> <span class="st">"secret"</span>,</span></span>
+<span class="r-in"><span>  api_version <span class="op">=</span> <span class="st">"v3"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>

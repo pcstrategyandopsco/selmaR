@@ -30,6 +30,16 @@ selma_intake_enrolments(con = NULL, intake_id, .progress = TRUE)
 
 A tibble of flattened intake enrolment records.
 
+## Details
+
+**v2 only.** The `intake_enrolments` endpoint does not exist in the
+SELMA v3 API. For v3 connections, use
+[`selma_enrolments()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_enrolments.md)
+with `intake_id`:
+
+    # v3 equivalent:
+    selma_enrolments(intake_id = 123)
+
 ## Examples
 
 ``` r

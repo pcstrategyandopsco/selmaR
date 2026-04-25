@@ -1,7 +1,7 @@
 #' Build a cache file path
 #' @noRd
 cache_path <- function(cache_dir, entity) {
-  file.path(cache_dir, paste0("selma_", entity, ".rds"))
+  file.path(cache_dir, str_c("selma_", entity, ".rds"))
 }
 
 #' Check if a cache file is fresh

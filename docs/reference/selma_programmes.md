@@ -7,7 +7,7 @@ Retrieves programme (qualification) records.
 ``` r
 selma_programmes(
   con = NULL,
-  status = NULL,
+  filter = list(),
   cache = FALSE,
   cache_dir = "selma_cache",
   cache_hours = 24,
@@ -24,9 +24,12 @@ selma_programmes(
   [`selma_connect()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_connect.md),
   or `NULL` (default) to use the stored connection.
 
-- status:
+- filter:
 
-  Filter by programme status (e.g. `"Active"`, `"Inactive"`).
+  Named list of API query parameters, e.g.
+  `list(surname = "Smith", first_name = "Alice")` (v3) or
+  `list(surname = "Smith", forename = "Alice")` (v2). Unknown names emit
+  a warning and are dropped.
 
 - cache:
 
@@ -52,12 +55,19 @@ selma_programmes(
 
 A tibble of programme records.
 
+## Details
+
+Use the `filter` argument to pass server-side query parameters sourced
+directly from the SELMA OpenAPI spec. Valid parameter names for the
+active API version are stored in
+`.selma_schemas[[version]]$programmes$params`.
+
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 selma_connect()
 programmes <- selma_programmes()
-programmes <- selma_programmes(status = "Active")
+programmes <- selma_programmes(filter = list(title = "Certificate"))
 } # }
 ```

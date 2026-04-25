@@ -39,13 +39,17 @@ automatically — no need to pass it explicitly.
 Credentials are resolved in order:
 \enumerate{
 \item \strong{Direct arguments} — \code{base_url}, \code{email}, \code{password}
-\item \strong{config.yml} — via the config package (\code{selma} key; see below)
-\item \strong{Environment variables} — \code{SELMA_BASE_URL}, \code{SELMA_EMAIL}, \code{SELMA_PASSWORD}
+\item \strong{config.yml} — version-specific block (\code{selma.v2} or \code{selma.v3}) if
+\code{api_version} is set, then flat \code{selma} block as fallback
+\item \strong{Environment variables} — version-specific (\code{SELMA_V3_EMAIL} etc.)
+then generic (\code{SELMA_EMAIL} etc.)
 }
 }
 \section{config.yml}{
 
-Create a \code{config.yml} in your project root (add to \code{.gitignore}!):
+Create a \code{config.yml} in your project root (add to \code{.gitignore}!).
+
+\strong{Single version} (flat structure, backward-compatible):
 
 \if{html}{\out{<div class="sourceCode yaml">}}\preformatted{default:
   selma:
@@ -53,6 +57,24 @@ Create a \code{config.yml} in your project root (add to \code{.gitignore}!):
     email: "api@selma.co.nz"
     password: "secret"
 }\if{html}{\out{</div>}}
+
+\strong{Dual version} (v2 and v3 credentials stored separately):
+
+\if{html}{\out{<div class="sourceCode yaml">}}\preformatted{default:
+  selma:
+    v2:
+      base_url: "https://myorg.selma.co.nz/"
+      email: "v2_api@selma.co.nz"
+      password: "v2secret"
+    v3:
+      base_url: "https://myorg.selma.app/"
+      email: "v3_api@selma.app"
+      password: "v3secret"
+}\if{html}{\out{</div>}}
+
+When \code{api_version = "v3"} is set (or auto-detected), selmaR reads
+\code{selma.v3.email} / \code{selma.v3.password} first, falling back to the flat
+\code{selma.email} / \code{selma.password} if not present.
 }
 
 \examples{

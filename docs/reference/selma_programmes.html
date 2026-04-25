@@ -53,7 +53,7 @@
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">selma_programmes</span><span class="op">(</span></span>
 <span>  con <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  status <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  cache <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  cache_dir <span class="op">=</span> <span class="st">"selma_cache"</span>,</span>
 <span>  cache_hours <span class="op">=</span> <span class="fl">24</span>,</span>
@@ -71,8 +71,11 @@
 (default) to use the stored connection.</p></dd>
 
 
-<dt id="arg-status">status<a class="anchor" aria-label="anchor" href="#arg-status"></a></dt>
-<dd><p>Filter by programme status (e.g. <code>"Active"</code>, <code>"Inactive"</code>).</p></dd>
+<dt id="arg-filter">filter<a class="anchor" aria-label="anchor" href="#arg-filter"></a></dt>
+<dd><p>Named list of API query parameters, e.g.
+<code>list(surname = "Smith", first_name = "Alice")</code> (v3) or
+<code>list(surname = "Smith", forename = "Alice")</code> (v2).
+Unknown names emit a warning and are dropped.</p></dd>
 
 
 <dt id="arg-cache">cache<a class="anchor" aria-label="anchor" href="#arg-cache"></a></dt>
@@ -99,13 +102,19 @@
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble of programme records.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Use the <code>filter</code> argument to pass server-side query parameters sourced
+directly from the SELMA OpenAPI spec. Valid parameter names for the active
+API version are stored in <code>.selma_schemas[[version]]$programmes$params</code>.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="selma_connect.html">selma_connect</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">programmes</span> <span class="op">&lt;-</span> <span class="fu">selma_programmes</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">programmes</span> <span class="op">&lt;-</span> <span class="fu">selma_programmes</span><span class="op">(</span>status <span class="op">=</span> <span class="st">"Active"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">programmes</span> <span class="op">&lt;-</span> <span class="fu">selma_programmes</span><span class="op">(</span>filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Certificate"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

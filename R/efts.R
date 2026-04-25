@@ -27,8 +27,8 @@ selma_efts_report <- function(components,
                               funded_statuses = SELMA_ALL_FUNDED_STATUSES,
                               exclude_international = TRUE) {
 
-  year_start <- as.Date(paste0(year, "-01-01"))
-  year_end <- as.Date(paste0(year, "-12-31"))
+  year_start <- as.Date(str_c(year, "-01-01"))
+  year_end <- as.Date(str_c(year, "-12-31"))
 
   df <- components |>
     mutate(
@@ -61,10 +61,10 @@ selma_efts_report <- function(components,
 
   # Calculate monthly EFTS
   months <- 1:12
-  month_cols <- paste0("efts_", sprintf("%02d", months))
+  month_cols <- str_c("efts_", sprintf("%02d", months))
 
   for (m in months) {
-    month_start <- as.Date(paste0(year, "-", sprintf("%02d", m), "-01"))
+    month_start <- as.Date(str_c(year, "-", sprintf("%02d", m), "-01"))
     month_end <- ceiling_date(month_start, "month") - days(1)
     col_name <- month_cols[m]
 

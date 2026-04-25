@@ -8,13 +8,7 @@ with `clean_names()` applied and IDs as character.
 ``` r
 selma_students(
   con = NULL,
-  surname = NULL,
-  forename = NULL,
-  email1 = NULL,
-  dob = NULL,
-  third_party_id = NULL,
-  third_party_id2 = NULL,
-  organisation = NULL,
+  filter = list(),
   cache = FALSE,
   cache_dir = "selma_cache",
   cache_hours = 24,
@@ -31,33 +25,12 @@ selma_students(
   [`selma_connect()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_connect.md),
   or `NULL` (default) to use the stored connection.
 
-- surname:
+- filter:
 
-  Filter by surname (exact match).
-
-- forename:
-
-  Filter by forename (exact match).
-
-- email1:
-
-  Filter by primary email (exact match).
-
-- dob:
-
-  Filter by date of birth (ISO date string, e.g. `"1990-01-15"`).
-
-- third_party_id:
-
-  Filter by ThirdPartyID.
-
-- third_party_id2:
-
-  Filter by ThirdPartyID2.
-
-- organisation:
-
-  Filter by organisation ID.
+  Named list of API query parameters, e.g.
+  `list(surname = "Smith", first_name = "Alice")` (v3) or
+  `list(surname = "Smith", forename = "Alice")` (v2). Unknown names emit
+  a warning and are dropped.
 
 - cache:
 
@@ -83,13 +56,20 @@ selma_students(
 
 A tibble of student records.
 
+## Details
+
+Use the `filter` argument to pass server-side query parameters sourced
+directly from the SELMA OpenAPI spec. Valid parameter names for the
+active API version are stored in
+`.selma_schemas[[version]]$students$params`.
+
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 selma_connect()
 students <- selma_students()
-students <- selma_students(surname = "Smith")
-students <- selma_students(cache = TRUE, cache_dir = "data")
+students <- selma_students(filter = list(surname = "Smith"))
+students <- selma_students(filter = list(first_name = "Alice"), cache = TRUE)
 } # }
 ```

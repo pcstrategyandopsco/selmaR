@@ -31,6 +31,8 @@ Fetch the main SELMA entities. Most accept optional filter parameters.
   : Fetch data from a SELMA API endpoint
 - [`selma_get_one()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_get_one.md)
   : Fetch a single record from a SELMA API endpoint
+- [`make_entity_fetcher()`](https://pcstrategyandopsco.github.io/selmaR/reference/make_entity_fetcher.md)
+  : Create a fetch function for any SELMA endpoint
 
 ## Notes, Contacts & Addresses
 

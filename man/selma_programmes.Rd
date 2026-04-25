@@ -6,7 +6,7 @@
 \usage{
 selma_programmes(
   con = NULL,
-  status = NULL,
+  filter = list(),
   cache = FALSE,
   cache_dir = "selma_cache",
   cache_hours = 24,
@@ -18,8 +18,10 @@ selma_programmes(
 \item{con}{A \code{selma_connection} object from \code{\link[=selma_connect]{selma_connect()}}, or \code{NULL}
 (default) to use the stored connection.}
 
-\item{status}{Filter by programme status (e.g. \code{"Active"}, \code{"Inactive"}).
-v2 only (\code{progstatus}) — ignored on v3 with a warning.}
+\item{filter}{Named list of API query parameters, e.g.
+\code{list(surname = "Smith", first_name = "Alice")} (v3) or
+\code{list(surname = "Smith", forename = "Alice")} (v2).
+Unknown names emit a warning and are dropped.}
 
 \item{cache}{If \code{TRUE}, use RDS caching (default \code{FALSE}).}
 
@@ -37,10 +39,15 @@ A tibble of programme records.
 \description{
 Retrieves programme (qualification) records.
 }
+\details{
+Use the \code{filter} argument to pass server-side query parameters sourced
+directly from the SELMA OpenAPI spec. Valid parameter names for the active
+API version are stored in \code{.selma_schemas[[version]]$programmes$params}.
+}
 \examples{
 \dontrun{
 selma_connect()
 programmes <- selma_programmes()
-programmes <- selma_programmes(status = "Active")
+programmes <- selma_programmes(filter = list(title = "Certificate"))
 }
 }

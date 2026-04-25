@@ -120,7 +120,7 @@ selma_contact_types <- function(con = NULL, cache = FALSE, cache_dir = "selma_ca
 #' }
 selma_student_org_contacts <- function(student_id, con = NULL) {
   con <- selma_get_connection(con)
-  url <- paste0(con$base_url, "app/student_org_contact/", student_id)
+  url <- str_c(con$base_url, "app/student_org_contact/", student_id)
   resp <- selma_request(con, url)
   resp[c("@context", "@id", "@type")] <- NULL
   if (length(resp) == 0) return(tibble())

@@ -9,8 +9,8 @@
 #'   if_else case_when arrange distinct slice_min rename_with
 #' @importFrom tidyr unnest_wider unnest_longer
 #' @importFrom purrr map map_chr map_dfr
-#' @importFrom stringr str_trim str_starts str_remove_all str_sub str_detect
-#'   str_replace str_extract fixed
+#' @importFrom stringr str_trim str_starts str_remove str_remove_all str_sub
+#'   str_detect str_replace str_extract str_c str_length str_to_upper fixed
 #' @importFrom janitor clean_names
 #' @importFrom cli cli_alert_info cli_alert_success cli_alert_warning
 #'   cli_alert_danger cli_progress_bar cli_progress_update cli_progress_done

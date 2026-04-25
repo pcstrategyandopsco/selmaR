@@ -6,8 +6,7 @@
 \usage{
 selma_components(
   con = NULL,
-  student_id = NULL,
-  enrol_id = NULL,
+  filter = list(),
   cache = FALSE,
   cache_dir = "selma_cache",
   cache_hours = 24,
@@ -19,11 +18,10 @@ selma_components(
 \item{con}{A \code{selma_connection} object from \code{\link[=selma_connect]{selma_connect()}}, or \code{NULL}
 (default) to use the stored connection.}
 
-\item{student_id}{Filter by student ID. v2 only (\code{studentid}) — ignored
-on v3 with a warning. Use \code{enrol_id} on v3 instead.}
-
-\item{enrol_id}{Filter by enrolment ID.
-Maps to \code{enrolid} (v2) or \code{enrolment} (v3).}
+\item{filter}{Named list of API query parameters, e.g.
+\code{list(surname = "Smith", first_name = "Alice")} (v3) or
+\code{list(surname = "Smith", forename = "Alice")} (v2).
+Unknown names emit a warning and are dropped.}
 
 \item{cache}{If \code{TRUE}, use RDS caching (default \code{FALSE}).}
 
@@ -39,13 +37,19 @@ Maps to \code{enrolid} (v2) or \code{enrolment} (v3).}
 A tibble of enrolment component records.
 }
 \description{
-Retrieves component-level data (individual course units within a
-programme). This is typically the largest dataset.
+Retrieves component-level data (individual course units within a programme).
+This is typically the largest dataset.
+}
+\details{
+Use the \code{filter} argument to pass server-side query parameters sourced
+directly from the SELMA OpenAPI spec. Valid parameter names for the active
+API version are stored in
+\code{.selma_schemas[[version]]$enrolment_components$params}.
 }
 \examples{
 \dontrun{
 selma_connect()
 components <- selma_components()
-components <- selma_components(enrol_id = "456")
+components <- selma_components(filter = list(enrolment = "456"))
 }
 }

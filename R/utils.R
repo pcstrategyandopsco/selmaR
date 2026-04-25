@@ -90,7 +90,7 @@ selma_student_url <- function(id, base_url) {
   ifelse(
     is.na(id),
     NA_character_,
-    paste0(base_url, "en/admin/student/", as.character(id), "/1")
+    str_c(base_url, "en/admin/student/", as.character(id), "/1")
   )
 }
 
@@ -106,6 +106,6 @@ selma_enrolment_url <- function(id, base_url) {
   ifelse(
     is.na(id),
     NA_character_,
-    paste0(base_url, "en/admin/enrolment/", as.character(id), "/1")
+    str_c(base_url, "en/admin/enrolment/", as.character(id), "/1")
   )
 }

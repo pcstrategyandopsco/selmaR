@@ -115,3 +115,86 @@ test_that("selma_disconnect clears stored connection", {
   expect_null(env$connection)
   env$connection <- old
 })
+
+# Version-specific credential resolution ----------------------------------
+
+test_that("selma_resolve_config reads version-specific config block", {
+  tmp <- withr::local_tempfile(fileext = ".yml")
+  writeLines(c(
+    "default:",
+    "  selma:",
+    '    base_url: "https://myorg.selma.co.nz/"',
+    '    email: "v2@selma.co.nz"',
+    '    password: "v2pass"',
+    "    v3:",
+    '      email: "v3@selma.co.nz"',
+    '      password: "v3pass"'
+  ), tmp)
+
+  withr::local_envvar(SELMA_BASE_URL = "", SELMA_EMAIL = "", SELMA_PASSWORD = "")
+
+  # v3 block used for v3
+  cfg_v3 <- selmaR:::selma_resolve_config(NULL, NULL, NULL,
+                                           config_file = tmp, api_version = "v3")
+  expect_equal(cfg_v3$email,    "v3@selma.co.nz")
+  expect_equal(cfg_v3$password, "v3pass")
+  # base_url falls back to flat block
+  expect_equal(cfg_v3$base_url, "https://myorg.selma.co.nz/")
+
+  # flat block used for v2 (no v2 block present)
+  cfg_v2 <- selmaR:::selma_resolve_config(NULL, NULL, NULL,
+                                           config_file = tmp, api_version = "v2")
+  expect_equal(cfg_v2$email,    "v2@selma.co.nz")
+  expect_equal(cfg_v2$password, "v2pass")
+})
+
+test_that("selma_resolve_config falls back to flat block when version block absent", {
+  tmp <- withr::local_tempfile(fileext = ".yml")
+  writeLines(c(
+    "default:",
+    "  selma:",
+    '    base_url: "https://myorg.selma.co.nz/"',
+    '    email: "flat@selma.co.nz"',
+    '    password: "flatpass"'
+  ), tmp)
+
+  withr::local_envvar(SELMA_BASE_URL = "", SELMA_EMAIL = "", SELMA_PASSWORD = "")
+
+  # No v3 block — falls back to flat credentials
+  cfg <- selmaR:::selma_resolve_config(NULL, NULL, NULL,
+                                        config_file = tmp, api_version = "v3")
+  expect_equal(cfg$email,    "flat@selma.co.nz")
+  expect_equal(cfg$password, "flatpass")
+})
+
+test_that("selma_resolve_config uses version-specific env vars", {
+  withr::local_envvar(
+    SELMA_BASE_URL    = "https://shared.selma.co.nz/",
+    SELMA_EMAIL       = "generic@selma.co.nz",
+    SELMA_PASSWORD    = "genericpass",
+    SELMA_V3_EMAIL    = "v3env@selma.co.nz",
+    SELMA_V3_PASSWORD = "v3envpass"
+  )
+
+  cfg <- selmaR:::selma_resolve_config(NULL, NULL, NULL,
+                                        config_file = NULL, api_version = "v3")
+  expect_equal(cfg$email,    "v3env@selma.co.nz")
+  expect_equal(cfg$password, "v3envpass")
+  # base_url falls back to generic since no SELMA_V3_BASE_URL set
+  expect_equal(cfg$base_url, "https://shared.selma.co.nz/")
+})
+
+test_that("selma_resolve_config falls back to generic env vars when version-specific absent", {
+  withr::local_envvar(
+    SELMA_BASE_URL    = "https://shared.selma.co.nz/",
+    SELMA_EMAIL       = "generic@selma.co.nz",
+    SELMA_PASSWORD    = "genericpass",
+    SELMA_V3_EMAIL    = "",
+    SELMA_V3_PASSWORD = ""
+  )
+
+  cfg <- selmaR:::selma_resolve_config(NULL, NULL, NULL,
+                                        config_file = NULL, api_version = "v3")
+  expect_equal(cfg$email,    "generic@selma.co.nz")
+  expect_equal(cfg$password, "genericpass")
+})

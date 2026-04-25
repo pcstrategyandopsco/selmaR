@@ -61,6 +61,16 @@ identify_id_columns <- function(fields) {
   grep("(^id$|_id$|id$)", fields, value = TRUE)
 }
 
+# Extract valid filter query parameter names for a collection GET endpoint.
+# Skips pagination params (page, itemsPerPage) — those are handled by selma_get().
+extract_query_params <- function(path_obj) {
+  params <- path_obj$get$parameters %||% list()
+  query  <- Filter(function(p) identical(p[["in"]], "query"), params)
+  skip   <- c("page", "itemsPerPage", "order", "order[]")
+  names_vec <- vapply(query, function(p) p[["name"]] %||% "", character(1L))
+  sort(unique(names_vec[!names_vec %in% skip & nchar(names_vec) > 0]))
+}
+
 # Extract the schema name for a collection GET endpoint's items.
 # Returns NULL if not found.
 collection_item_ref <- function(path_obj) {
@@ -126,7 +136,8 @@ process_spec <- function(spec_path, path_prefix) {
 
     entity_schemas[[entity]] <- list(
       fields     = cleaned,
-      id_columns = id_cols
+      id_columns = id_cols,
+      params     = extract_query_params(paths[[path]])
     )
   }
 

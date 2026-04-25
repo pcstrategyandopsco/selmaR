@@ -6,8 +6,7 @@
 \usage{
 selma_enrolments(
   con = NULL,
-  intake_id = NULL,
-  student_id = NULL,
+  filter = list(),
   cache = FALSE,
   cache_dir = "selma_cache",
   cache_hours = 24,
@@ -19,11 +18,9 @@ selma_enrolments(
 \item{con}{A \code{selma_connection} object from \code{\link[=selma_connect]{selma_connect()}}, or \code{NULL}
 (default) to use the stored connection.}
 
-\item{intake_id}{Filter by intake ID. v3 only — ignored on v2 with a
-warning.}
-
-\item{student_id}{Filter by student ID. v3 only — ignored on v2 with a
-warning.}
+\item{filter}{Named list of API query parameters, e.g.
+\code{list("enrolment_status_date[after]" = "2026-01-01")}.
+Unknown names emit a warning and are dropped.}
 
 \item{cache}{If \code{TRUE}, use RDS caching (default \code{FALSE}).}
 
@@ -40,11 +37,23 @@ A tibble of enrolment records.
 }
 \description{
 Retrieves all enrolment records linking students to intakes.
+Use the \code{filter} argument to pass server-side query parameters sourced
+directly from the SELMA OpenAPI spec. Valid parameter names for the active
+API version are stored in \code{.selma_schemas[[version]]$enrolments$params}.
 }
 \examples{
 \dontrun{
 selma_connect()
+
+# All enrolments
 enrolments <- selma_enrolments()
-enrolments <- selma_enrolments(intake_id = "123")  # v3 only
+
+# Status changed yesterday (v3)
+enrolments <- selma_enrolments(
+  filter = list("enrolment_status_date[after]" = "2026-04-23")
+)
+
+# Filter by intake (v3)
+enrolments <- selma_enrolments(filter = list(intake = "123"))
 }
 }

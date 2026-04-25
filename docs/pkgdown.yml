@@ -2,13 +2,14 @@ pandoc: '3.9'
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
+  api-v3-migration: api-v3-migration.html
   efts-reporting: efts-reporting.html
   getting-started: getting-started.html
   limitations: limitations.html
   mcp-examples: mcp-examples.html
   mcp-server-design: mcp-server-design.html
   phone-normalization: phone-normalization.html
-last_built: 2026-03-20T03:55Z
+last_built: 2026-04-25T10:26Z
 urls:
   reference: https://pcstrategyandopsco.github.io/selmaR/reference
   article: https://pcstrategyandopsco.github.io/selmaR/articles

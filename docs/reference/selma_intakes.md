@@ -7,10 +7,7 @@ Retrieves intake (cohort) records with dates and programme links.
 ``` r
 selma_intakes(
   con = NULL,
-  prog_id = NULL,
-  status = NULL,
-  start_before = NULL,
-  start_after = NULL,
+  filter = list(),
   cache = FALSE,
   cache_dir = "selma_cache",
   cache_hours = 24,
@@ -27,21 +24,12 @@ selma_intakes(
   [`selma_connect()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_connect.md),
   or `NULL` (default) to use the stored connection.
 
-- prog_id:
+- filter:
 
-  Filter by programme ID.
-
-- status:
-
-  Filter by intake status (e.g. `"Open"`, `"Closed"`).
-
-- start_before:
-
-  Filter intakes starting before this date (ISO string).
-
-- start_after:
-
-  Filter intakes starting after this date (ISO string).
+  Named list of API query parameters, e.g.
+  `list(surname = "Smith", first_name = "Alice")` (v3) or
+  `list(surname = "Smith", forename = "Alice")` (v2). Unknown names emit
+  a warning and are dropped.
 
 - cache:
 
@@ -67,13 +55,19 @@ selma_intakes(
 
 A tibble of intake records.
 
+## Details
+
+Use the `filter` argument to pass server-side query parameters sourced
+directly from the SELMA OpenAPI spec. Valid parameter names for the
+active API version are stored in
+`.selma_schemas[[version]]$intakes$params`.
+
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 selma_connect()
 intakes <- selma_intakes()
-intakes <- selma_intakes(prog_id = "42")
-intakes <- selma_intakes(start_after = "2025-01-01")
+intakes <- selma_intakes(filter = list("start_date[after]" = "2025-01-01"))
 } # }
 ```

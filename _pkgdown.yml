@@ -64,6 +64,7 @@ reference:
       - selma_intake_enrolments
       - selma_get
       - selma_get_one
+      - make_entity_fetcher
 
   - title: Notes, Contacts & Addresses
     desc: Student notes, external contacts, and address records.

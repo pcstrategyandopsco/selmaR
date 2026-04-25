@@ -6,13 +6,7 @@
 \usage{
 selma_students(
   con = NULL,
-  surname = NULL,
-  forename = NULL,
-  email1 = NULL,
-  dob = NULL,
-  third_party_id = NULL,
-  third_party_id2 = NULL,
-  organisation = NULL,
+  filter = list(),
   cache = FALSE,
   cache_dir = "selma_cache",
   cache_hours = 24,
@@ -24,23 +18,10 @@ selma_students(
 \item{con}{A \code{selma_connection} object from \code{\link[=selma_connect]{selma_connect()}}, or \code{NULL}
 (default) to use the stored connection.}
 
-\item{surname}{Filter by surname (exact match). Supported in v2 and v3.}
-
-\item{forename}{Filter by forename / first name (exact match).
-Maps to \code{forename} (v2) or \code{first_name} (v3).}
-
-\item{email1}{Filter by primary email (exact match).
-Maps to \code{email1} (v2) or \code{email_primary} (v3).}
-
-\item{dob}{Filter by date of birth (ISO date string, e.g. \code{"1990-01-15"}).
-Maps to \code{dob} (v2) or \code{date_of_birth} (v3).}
-
-\item{third_party_id}{Filter by ThirdPartyID / other_id_1.}
-
-\item{third_party_id2}{Filter by ThirdPartyID2 / other_id_2.}
-
-\item{organisation}{Filter by organisation ID. v2 only — ignored on v3
-with a warning.}
+\item{filter}{Named list of API query parameters, e.g.
+\code{list(surname = "Smith", first_name = "Alice")} (v3) or
+\code{list(surname = "Smith", forename = "Alice")} (v2).
+Unknown names emit a warning and are dropped.}
 
 \item{cache}{If \code{TRUE}, use RDS caching (default \code{FALSE}).}
 
@@ -59,11 +40,16 @@ A tibble of student records.
 Retrieves student records with contact information. Returns a tibble
 with \code{clean_names()} applied and IDs as character.
 }
+\details{
+Use the \code{filter} argument to pass server-side query parameters sourced
+directly from the SELMA OpenAPI spec. Valid parameter names for the active
+API version are stored in \code{.selma_schemas[[version]]$students$params}.
+}
 \examples{
 \dontrun{
 selma_connect()
 students <- selma_students()
-students <- selma_students(surname = "Smith")
-students <- selma_students(cache = TRUE, cache_dir = "data")
+students <- selma_students(filter = list(surname = "Smith"))
+students <- selma_students(filter = list(first_name = "Alice"), cache = TRUE)
 }
 }

@@ -8,8 +8,7 @@ programme). This is typically the largest dataset.
 ``` r
 selma_components(
   con = NULL,
-  student_id = NULL,
-  enrol_id = NULL,
+  filter = list(),
   cache = FALSE,
   cache_dir = "selma_cache",
   cache_hours = 24,
@@ -26,13 +25,12 @@ selma_components(
   [`selma_connect()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_connect.md),
   or `NULL` (default) to use the stored connection.
 
-- student_id:
+- filter:
 
-  Filter by student ID.
-
-- enrol_id:
-
-  Filter by enrolment ID.
+  Named list of API query parameters, e.g.
+  `list(surname = "Smith", first_name = "Alice")` (v3) or
+  `list(surname = "Smith", forename = "Alice")` (v2). Unknown names emit
+  a warning and are dropped.
 
 - cache:
 
@@ -58,13 +56,19 @@ selma_components(
 
 A tibble of enrolment component records.
 
+## Details
+
+Use the `filter` argument to pass server-side query parameters sourced
+directly from the SELMA OpenAPI spec. Valid parameter names for the
+active API version are stored in
+`.selma_schemas[[version]]$enrolment_components$params`.
+
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 selma_connect()
 components <- selma_components()
-components <- selma_components(student_id = "123")
-components <- selma_components(enrol_id = "456")
+components <- selma_components(filter = list(enrolment = "456"))
 } # }
 ```
