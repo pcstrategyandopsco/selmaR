@@ -15,7 +15,7 @@ selma_join_addresses(addresses, students)
 A tibble with address and student columns joined.
 }
 \description{
-Links address records to their associated students.
+Links address records to their associated students. Works on v2 and v3 data.
 }
 \examples{
 \dontrun{

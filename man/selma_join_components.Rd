@@ -16,7 +16,7 @@ A tibble with component and enrolment columns joined.
 }
 \description{
 Links component-level data (individual course units) back to their
-parent enrolments. Useful for building detailed per-component reports.
+parent enrolments. Works on v2 and v3 data.
 }
 \examples{
 \dontrun{

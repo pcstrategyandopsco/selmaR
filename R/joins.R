@@ -1,7 +1,7 @@
 #' Join enrolments with student details
 #'
-#' Convenience function that joins enrolments to students, giving you a
-#' combined tibble with student contact details alongside each enrolment.
+#' Convenience function that joins enrolments to students. Works on both v2
+#' and v3 data — the join key is detected automatically from column names.
 #'
 #' @param enrolments A tibble from [selma_enrolments()].
 #' @param students A tibble from [selma_students()].
@@ -15,15 +15,23 @@
 #' student_enrolments <- selma_join_students(enrolments, students)
 #' }
 selma_join_students <- function(enrolments, students) {
-  left_join(enrolments, students,
-            by = c("student_id" = "id"),
-            suffix = c("", ".student"))
+  if ("student" %in% names(enrolments)) {
+    # v3: student is character (IRI-stripped) — cast to integer for join
+    enrolments |>
+      mutate(.fk = as.integer(student)) |>
+      left_join(students, by = c(".fk" = "id"), suffix = c("", ".student")) |>
+      select(-.fk)
+  } else {
+    left_join(enrolments, students,
+              by = c("student_id" = "id"),
+              suffix = c("", ".student"))
+  }
 }
 
 #' Join enrolments with intake details
 #'
-#' Convenience function that joins enrolments to intakes, adding intake
-#' dates, programme links, and cohort information to each enrolment.
+#' Convenience function that joins enrolments to intakes. Works on both v2
+#' and v3 data — the join key is detected automatically from column names.
 #'
 #' @param enrolments A tibble from [selma_enrolments()].
 #' @param intakes A tibble from [selma_intakes()].
@@ -37,15 +45,23 @@ selma_join_students <- function(enrolments, students) {
 #' enrolment_intakes <- selma_join_intakes(enrolments, intakes)
 #' }
 selma_join_intakes <- function(enrolments, intakes) {
-  left_join(enrolments, intakes,
-            by = c("intake_id" = "intakeid"),
-            suffix = c("", ".intake"))
+  if ("intake" %in% names(enrolments)) {
+    # v3: intake is character (IRI-stripped); intakes PK is id
+    enrolments |>
+      mutate(.fk = as.integer(intake)) |>
+      left_join(intakes, by = c(".fk" = "id"), suffix = c("", ".intake")) |>
+      select(-.fk)
+  } else {
+    left_join(enrolments, intakes,
+              by = c("intake_id" = "intakeid"),
+              suffix = c("", ".intake"))
+  }
 }
 
 #' Build a complete student enrolment pipeline
 #'
 #' Joins enrolments to both students and intakes in one step — the most
-#' common starting point for SELMA analysis.
+#' common starting point for SELMA analysis. Works on v2 and v3 data.
 #'
 #' @param enrolments A tibble from [selma_enrolments()].
 #' @param students A tibble from [selma_students()].
@@ -61,9 +77,9 @@ selma_join_intakes <- function(enrolments, intakes) {
 #'   selma_intakes(con)
 #' )
 #'
-#' # Filter to funded students
+#' # Filter to funded enrolments
 #' active <- pipeline |>
-#'   dplyr::filter(enrstatus %in% SELMA_FUNDED_STATUSES)
+#'   dplyr::filter(enrolment_status %in% SELMA_FUNDED_STATUSES)
 #' }
 selma_student_pipeline <- function(enrolments, students, intakes) {
   enrolments |>
@@ -74,7 +90,7 @@ selma_student_pipeline <- function(enrolments, students, intakes) {
 #' Join components to enrolments
 #'
 #' Links component-level data (individual course units) back to their
-#' parent enrolments. Useful for building detailed per-component reports.
+#' parent enrolments. Works on v2 and v3 data.
 #'
 #' @param components A tibble from [selma_components()].
 #' @param enrolments A tibble from [selma_enrolments()].
@@ -88,15 +104,22 @@ selma_student_pipeline <- function(enrolments, students, intakes) {
 #' component_details <- selma_join_components(components, enrolments)
 #' }
 selma_join_components <- function(components, enrolments) {
-  left_join(components, enrolments,
-            by = c("enrolid" = "id"),
-            suffix = c("", ".enrolment"))
+  if ("enrolment" %in% names(components)) {
+    # v3: enrolment is character (IRI-stripped); enrolments PK is id
+    components |>
+      mutate(.fk = as.integer(enrolment)) |>
+      left_join(enrolments, by = c(".fk" = "id"), suffix = c("", ".enrolment")) |>
+      select(-.fk)
+  } else {
+    left_join(components, enrolments,
+              by = c("enrolid" = "id"),
+              suffix = c("", ".enrolment"))
+  }
 }
 
 #' Join intakes to programme details
 #'
-#' Links intakes to their parent programme definitions, adding programme
-#' names and metadata to each intake.
+#' Links intakes to their parent programme definitions. Works on v2 and v3 data.
 #'
 #' @param intakes A tibble from [selma_intakes()].
 #' @param programmes A tibble from [selma_programmes()].
@@ -110,14 +133,25 @@ selma_join_components <- function(components, enrolments) {
 #' intake_programmes <- selma_join_programmes(intakes, programmes)
 #' }
 selma_join_programmes <- function(intakes, programmes) {
-  left_join(intakes, programmes,
-            by = "progid",
-            suffix = c("", ".programme"))
+  if ("programme" %in% names(intakes)) {
+    # v3: programme is character (IRI-stripped); programmes PK is id
+    intakes |>
+      mutate(.fk = as.integer(programme)) |>
+      left_join(programmes, by = c(".fk" = "id"), suffix = c("", ".programme")) |>
+      select(-.fk)
+  } else {
+    left_join(intakes, programmes,
+              by = "progid",
+              suffix = c("", ".programme"))
+  }
 }
 
 #' Join notes to students
 #'
-#' Links notes/events to student records.
+#' Links note records to student records. On v2, notes have a direct
+#' `student_id` foreign key. On v3, notes (comments) are linked via events
+#' rather than directly to students — this function works on v2 only and
+#' aborts with an informative message on v3.
 #'
 #' @param notes A tibble from [selma_notes()].
 #' @param students A tibble from [selma_students()].
@@ -131,6 +165,13 @@ selma_join_programmes <- function(intakes, programmes) {
 #' )
 #' }
 selma_join_notes <- function(notes, students) {
+  if ("event" %in% names(notes)) {
+    abort(c(
+      "selma_join_notes() does not support v3 data.",
+      "i" = "In v3, comments (notes) link to students via events, not directly.",
+      "i" = "Join via: notes |> left_join(events) |> left_join(students)."
+    ))
+  }
   left_join(notes, students,
             by = c("student_id" = "id"),
             suffix = c("", ".student"))
@@ -138,7 +179,7 @@ selma_join_notes <- function(notes, students) {
 
 #' Join addresses to students
 #'
-#' Links address records to their associated students.
+#' Links address records to their associated students. Works on v2 and v3 data.
 #'
 #' @param addresses A tibble from [selma_addresses()].
 #' @param students A tibble from [selma_students()].
@@ -152,14 +193,22 @@ selma_join_notes <- function(notes, students) {
 #' )
 #' }
 selma_join_addresses <- function(addresses, students) {
-  left_join(addresses, students,
-            by = c("studentid" = "id"),
-            suffix = c("", ".student"))
+  if ("student" %in% names(addresses)) {
+    # v3: student is character (IRI-stripped)
+    addresses |>
+      mutate(.fk = as.integer(student)) |>
+      left_join(students, by = c(".fk" = "id"), suffix = c("", ".student")) |>
+      select(-.fk)
+  } else {
+    left_join(addresses, students,
+              by = c("studentid" = "id"),
+              suffix = c("", ".student"))
+  }
 }
 
 #' Join classes to campuses
 #'
-#' Links class records to their campus locations.
+#' Links class records to their campus locations. Works on v2 and v3 data.
 #'
 #' @param classes A tibble from [selma_classes()].
 #' @param campuses A tibble from [selma_campuses()].
@@ -173,14 +222,24 @@ selma_join_addresses <- function(addresses, students) {
 #' )
 #' }
 selma_join_classes <- function(classes, campuses) {
-  left_join(classes, campuses,
-            by = c("campusid" = "id"),
-            suffix = c("", ".campus"))
+  if ("campus" %in% names(classes)) {
+    # v3: campus is character (IRI-stripped)
+    classes |>
+      mutate(.fk = as.integer(campus)) |>
+      left_join(campuses, by = c(".fk" = "id"), suffix = c("", ".campus")) |>
+      select(-.fk)
+  } else {
+    left_join(classes, campuses,
+              by = c("campusid" = "id"),
+              suffix = c("", ".campus"))
+  }
 }
 
 #' Join component attempts to enrolment components
 #'
 #' Links assessment attempt records to their parent enrolment components.
+#' The `enrolment_component_attempts` endpoint is v2-only — this function
+#' aborts with an informative message if called with v3 data.
 #'
 #' @param attempts A tibble from [selma_component_attempts()].
 #' @param components A tibble from [selma_components()].
@@ -194,6 +253,12 @@ selma_join_classes <- function(classes, campuses) {
 #' )
 #' }
 selma_join_attempts <- function(attempts, components) {
+  if (!"compenrid" %in% names(attempts)) {
+    abort(c(
+      "selma_join_attempts() requires v2 data.",
+      "i" = "The enrolment_component_attempts endpoint does not exist in SELMA v3."
+    ))
+  }
   left_join(attempts, components,
             by = "compenrid",
             suffix = c("", ".component"))
@@ -202,8 +267,7 @@ selma_join_attempts <- function(attempts, components) {
 #' Build a full component pipeline
 #'
 #' Joins components to enrolments, students, and intakes in one step.
-#' Useful for building detailed per-component reports with full student
-#' and intake context.
+#' Works on v2 and v3 data — join keys are detected automatically.
 #'
 #' @param components A tibble from [selma_components()].
 #' @param enrolments A tibble from [selma_enrolments()].
@@ -224,10 +288,6 @@ selma_join_attempts <- function(attempts, components) {
 selma_component_pipeline <- function(components, enrolments, students, intakes) {
   components |>
     selma_join_components(enrolments) |>
-    left_join(students,
-              by = c("student_id" = "id"),
-              suffix = c("", ".student")) |>
-    left_join(intakes,
-              by = c("intake_id" = "intakeid"),
-              suffix = c("", ".intake"))
+    selma_join_students(students) |>
+    selma_join_intakes(intakes)
 }

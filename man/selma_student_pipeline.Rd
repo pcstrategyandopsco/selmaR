@@ -18,7 +18,7 @@ A tibble combining enrolment, student, and intake data.
 }
 \description{
 Joins enrolments to both students and intakes in one step — the most
-common starting point for SELMA analysis.
+common starting point for SELMA analysis. Works on v2 and v3 data.
 }
 \examples{
 \dontrun{
@@ -29,8 +29,8 @@ pipeline <- selma_student_pipeline(
   selma_intakes(con)
 )
 
-# Filter to funded students
+# Filter to funded enrolments
 active <- pipeline |>
-  dplyr::filter(enrstatus \%in\% SELMA_FUNDED_STATUSES)
+  dplyr::filter(enrolment_status \%in\% SELMA_FUNDED_STATUSES)
 }
 }

@@ -15,8 +15,8 @@ selma_join_students(enrolments, students)
 A tibble with enrolment and student columns joined.
 }
 \description{
-Convenience function that joins enrolments to students, giving you a
-combined tibble with student contact details alongside each enrolment.
+Convenience function that joins enrolments to students. Works on both v2
+and v3 data — the join key is detected automatically from column names.
 }
 \examples{
 \dontrun{

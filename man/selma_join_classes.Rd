@@ -15,7 +15,7 @@ selma_join_classes(classes, campuses)
 A tibble with class and campus columns joined.
 }
 \description{
-Links class records to their campus locations.
+Links class records to their campus locations. Works on v2 and v3 data.
 }
 \examples{
 \dontrun{

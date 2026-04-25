@@ -15,7 +15,10 @@ selma_join_notes(notes, students)
 A tibble with note and student columns joined.
 }
 \description{
-Links notes/events to student records.
+Links note records to student records. On v2, notes have a direct
+\code{student_id} foreign key. On v3, notes (comments) are linked via events
+rather than directly to students — this function works on v2 only and
+aborts with an informative message on v3.
 }
 \examples{
 \dontrun{

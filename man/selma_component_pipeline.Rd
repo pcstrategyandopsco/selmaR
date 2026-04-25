@@ -20,8 +20,7 @@ A tibble combining component, enrolment, student, and intake data.
 }
 \description{
 Joins components to enrolments, students, and intakes in one step.
-Useful for building detailed per-component reports with full student
-and intake context.
+Works on v2 and v3 data — join keys are detected automatically.
 }
 \examples{
 \dontrun{

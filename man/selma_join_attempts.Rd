@@ -16,6 +16,8 @@ A tibble with attempt and component columns joined.
 }
 \description{
 Links assessment attempt records to their parent enrolment components.
+The \code{enrolment_component_attempts} endpoint is v2-only — this function
+aborts with an informative message if called with v3 data.
 }
 \examples{
 \dontrun{

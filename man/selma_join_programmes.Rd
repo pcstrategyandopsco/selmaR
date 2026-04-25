@@ -15,8 +15,7 @@ selma_join_programmes(intakes, programmes)
 A tibble with intake and programme columns joined.
 }
 \description{
-Links intakes to their parent programme definitions, adding programme
-names and metadata to each intake.
+Links intakes to their parent programme definitions. Works on v2 and v3 data.
 }
 \examples{
 \dontrun{
