@@ -1,0 +1,270 @@
+---
+title: "Migrating from SELMA API v2 to v3"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Migrating from SELMA API v2 to v3}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+SELMA v3 is a significant API revision. This vignette documents every breaking
+change that affects selmaR users upgrading from a SELMA v2 instance to v3.
+
+## Quick start
+
+```r
+# v2 (explicit)
+con <- selma_connect(api_version = "v2")
+
+# v3 (explicit)
+con <- selma_connect(api_version = "v3")
+
+# Auto-detect (default) — probes the API at connect time
+con <- selma_connect()
+```
+
+The detected version is stored on the connection object and drives all
+subsequent requests. You can check it at any time:
+
+```r
+con$api_version  # "v2" or "v3"
+print(con)       # shows version in summary
+```
+
+---
+
+## Structural changes
+
+| | v2 | v3 |
+|---|---|---|
+| URL path prefix | `/app/` | `/api/` |
+| Pagination member key | `hydra:member` | `member` |
+| Pagination total key | `hydra:totalItems` | `totalItems` |
+| Auth endpoint | `api/login_check` | `api/auth` |
+| Field casing (raw API) | Inconsistent (camelCase / PascalCase) | snake_case |
+
+These are handled automatically by selmaR — you do not need to change any
+code to account for them. If your SELMA instance is upgraded from v2 to v3,
+re-run `selma_connect()` and selmaR will auto-detect the new version.
+
+---
+
+## Removed endpoint
+
+`selma_intake_enrolments()` is not available on v3. The
+`/app/intake_enrolments` endpoint was removed; the equivalent data is now
+accessed by filtering the enrolments endpoint directly.
+
+```r
+# v2
+ie <- selma_intake_enrolments(intake_id = 123)
+
+# v3 equivalent
+enrolments <- selma_enrolments(intake_id = "123")
+```
+
+---
+
+## Query parameter changes
+
+Several entity functions accept filter parameters whose API names differ
+between versions. selmaR maps them automatically — the R function signature
+is unchanged. Parameters not supported in v3 emit a `cli_warn()` and are
+ignored rather than silently sending a wrong parameter.
+
+### `selma_students()`
+
+| R argument | v2 API param | v3 API param |
+|---|---|---|
+| `forename` | `forename` | `first_name` |
+| `email1` | `email1` | `email_primary` |
+| `dob` | `dob` | `date_of_birth` |
+| `third_party_id` | `ThirdPartyID1` | `other_id_1` |
+| `third_party_id2` | `ThirdPartyID2` | `other_id_2` |
+| `organisation` | `Organisation` | *(not supported — warns)* |
+| `surname` | `surname` | `surname` *(unchanged)* |
+
+### `selma_enrolments()`
+
+v2 had no server-side filter parameters. v3 adds `intake_id` and
+`student_id`:
+
+```r
+# v3 only — returns 404 or full dataset on v2
+enrolments <- selma_enrolments(intake_id = "123")
+enrolments <- selma_enrolments(student_id = "456")
+```
+
+### `selma_components()`
+
+| R argument | v2 API param | v3 API param |
+|---|---|---|
+| `enrol_id` | `enrolid` | `enrolment` |
+| `student_id` | `studentid` | *(not supported — warns)* |
+
+### `selma_intakes()`
+
+| R argument | v2 API param | v3 API param |
+|---|---|---|
+| `start_before` | `intakestartdate[before]` | `start_date[before]` |
+| `start_after` | `intakestartdate[after]` | `start_date[after]` |
+| `prog_id` | `ProgID` | *(not supported — warns)* |
+| `status` | `intakestatus` | *(not supported — warns)* |
+
+### `selma_programmes()`
+
+| R argument | v2 API param | v3 API param |
+|---|---|---|
+| `status` | `progstatus` | *(not supported — warns)* |
+
+---
+
+## Field name changes
+
+The returned tibble column names differ between versions because the SELMA
+v3 API changed field names. selmaR does not translate field names — it
+surfaces what the API returns after `clean_names()`.
+
+### Students
+
+Key renames (v2 column → v3 column):
+
+| v2 | v3 |
+|---|---|
+| `forename` | `first_name` |
+| `middlename` | `middle_name` |
+| `surname` | `surname` *(unchanged)* |
+| `preferredname` | `preferred_name` |
+| `previousname` | `previous_name` |
+| `dob` | `date_of_birth` |
+| `mobilephone` | `phone_mobile` |
+| `secondaryphone` | `phone_home` |
+| `email1` | `email_primary` |
+| `email2` | `email_secondary` |
+| `countryofbirth` | `country_of_birth` |
+| `third_party_id` | `other_id_1` |
+| `third_party_id2` | `other_id_2` |
+| `disabilitydetails` | `disability_details` |
+| `medicalcondition` | `medical_condition` |
+| `bank_acc` | `bank_account` |
+
+Fields present in v2 but **removed in v3**: `nsn`, `contacts`, `initials`,
+`identitychecked`, `international`, `mainagent`, `austresidency`, `residency`,
+`residentialstatus`, `passportnumber`, `passportexpiry`, `visatype`,
+`visanumber`, `visaexpiry`, `ethnicity1`–`3`, `iwi1`–`3`, `lms_isuser`,
+`validate_data_for`.
+
+Fields **new in v3** (not in v2): `pronoun`, `contact_id`, `user_name`,
+`email_school`, `phone_work`, `homestay`, `primary_learning_style`,
+`secondary_learning_style`, `student_identifier`,
+`new_zealand_student_extension`, `australia_student_extension`.
+
+### Enrolments
+
+Key renames:
+
+| v2 | v3 |
+|---|---|
+| `student_id` | `student` *(IRI reference)* |
+| `intake_id` | `intake` *(IRI reference)* |
+| `enrstartdate` | `start_date` |
+| `enrenddate` | `end_date` |
+| `enrstatus` | `enrolment_status` |
+| `enrstatusdate` | `enrolment_status_date` |
+| `fundingsource` | `enrolment_payer_type_id` |
+| `enrwithdrawalreason` | `withdrawal_reason` |
+| `enrwithdrawaldate` | `withdrawal_date` |
+| `enrcompletiondate` | `finished_date` |
+
+### Enrolment components
+
+The component fields were substantially restructured. Key renames:
+
+| v2 | v3 |
+|---|---|
+| `compenrid` | `id` |
+| `enrolid` | `enrolment` *(IRI reference)* |
+| `compid` | `component` *(IRI reference)* |
+| `compenrstartdate` | `start_date` |
+| `compenrenddate` | `end_date` |
+| `compenrduedate` | `due_date` |
+| `compenrstatus` | `enrolment_status` |
+| `compenrwithdrawaldate` | `withdrawal_date` |
+| `compenrcompletiondate` | `completion_date` |
+| `compenrextensiondate` | `extension_date` |
+| `compenrgrade` | *(via `enrolment_component_grades`)* |
+
+Many v2 user-defined fields (`userfieldchar1` etc.) are replaced by
+`custom_field_values` in v3.
+
+### Intakes
+
+| v2 | v3 |
+|---|---|
+| `intakeid` | `id` |
+| `intakecode` | `code` |
+| `intake_name` | `name` |
+| `intakestartdate` | `start_date` |
+| `intakeenddate` | `end_date` |
+| `intakestatus` | `intake_status` *(nested object)* |
+| `progid` | `programme` *(IRI reference)* |
+
+### Programmes
+
+| v2 | v3 |
+|---|---|
+| `progid` | `id` |
+| `progcode` | `code` |
+| `progtitle` | `title` |
+| `progversion` | `version` |
+| `progdescription` | `description` |
+| `progefts` | *(removed; see duration fields)* |
+| `progstatus` | *(removed; filter no longer available)* |
+
+---
+
+## Updating code that references column names
+
+Because column names differ, any downstream code that references specific
+columns by name will need updating when you switch from v2 to v3. The
+recommended approach is to write your column references against the version
+you are on, and update them when migrating:
+
+```r
+# v2
+students |> dplyr::select(id, forename, surname, dob, email1)
+
+# v3
+students |> dplyr::select(id, first_name, surname, date_of_birth, email_primary)
+```
+
+If you need to support both versions in the same codebase, check
+`con$api_version`:
+
+```r
+name_col <- if (con$api_version == "v3") "first_name" else "forename"
+students[[name_col]]
+```
+
+---
+
+## Schema validation warnings
+
+When the live API returns fewer fields than the package's built-in schema
+snapshot (derived from the OpenAPI specs shipped with the package), selmaR
+emits a `cli_warn()` listing the missing fields. This is a signal to check
+whether your SELMA instance has been upgraded and whether a package update
+is available — not an error.
+
+```
+Warning: SELMA students (v2): 3 expected fields missing from response.
+ℹ forename, dob, email1
+ℹ The SELMA API may have changed. Check for a package update.
+```
+
+These warnings can be suppressed with `suppressWarnings()` if you have
+confirmed the field removals are expected for your instance.
