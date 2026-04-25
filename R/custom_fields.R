@@ -36,7 +36,13 @@ selma_custom_fields <- function(con = NULL, cache = FALSE, cache_dir = "selma_ca
 #' }
 selma_student_custom_fields <- function(student_id, con = NULL) {
   con <- selma_get_connection(con)
-  url <- paste0(con$base_url, "app/student/custom/", student_id)
+  if (con$api_version == "v3") {
+    abort(c(
+      "selma_student_custom_fields() uses a v2-only endpoint with no v3 equivalent.",
+      "i" = "Check the v3 API spec for an alternative endpoint."
+    ))
+  }
+  url <- str_c(con$base_url, "app/student/custom/", student_id)
   resp <- selma_request(con, url)
   resp[c("@context", "@id", "@type")] <- NULL
   if (length(resp) == 0) return(tibble())
@@ -65,7 +71,13 @@ selma_student_custom_fields <- function(student_id, con = NULL) {
 #' }
 selma_enrolment_custom_fields <- function(enrolment_id, con = NULL) {
   con <- selma_get_connection(con)
-  url <- paste0(con$base_url, "app/enrolment/custom/", enrolment_id)
+  if (con$api_version == "v3") {
+    abort(c(
+      "selma_enrolment_custom_fields() uses a v2-only endpoint with no v3 equivalent.",
+      "i" = "Check the v3 API spec for an alternative endpoint."
+    ))
+  }
+  url <- str_c(con$base_url, "app/enrolment/custom/", enrolment_id)
   resp <- selma_request(con, url)
   resp[c("@context", "@id", "@type")] <- NULL
   if (length(resp) == 0) return(tibble())
@@ -95,8 +107,13 @@ selma_enrolment_custom_fields <- function(enrolment_id, con = NULL) {
 #' }
 selma_component_custom_fields <- function(enrolment_id, con = NULL) {
   con <- selma_get_connection(con)
-  url <- paste0(con$base_url, "app/enrolment_component/custom/collection/",
-                enrolment_id)
+  if (con$api_version == "v3") {
+    abort(c(
+      "selma_component_custom_fields() uses a v2-only endpoint with no v3 equivalent.",
+      "i" = "Check the v3 API spec for an alternative endpoint."
+    ))
+  }
+  url <- str_c(con$base_url, "app/enrolment_component/custom/collection/", enrolment_id)
   resp <- selma_request(con, url)
   if (is.null(resp) || length(resp) == 0) return(tibble())
   # May be a list of records

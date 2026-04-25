@@ -24,14 +24,13 @@ selma_get <- function(con = NULL, endpoint, query_params = NULL,
   con <- selma_get_connection(con)
 
   cfg      <- api_cfg(con$api_version)
-  full_url <- paste0(con$base_url, cfg$path_prefix, endpoint)
+  full_url <- str_c(con$base_url, cfg$path_prefix, resolve_endpoint(endpoint, con$api_version))
 
-  base_query <- list(page = 1L, itemsPerPage = items_per_page)
-  query <- if (!is.null(query_params)) {
-    modifyList(base_query, query_params)
-  } else {
-    base_query
+  base_query <- list(page = 1L)
+  if (!is.null(cfg$page_size_param)) {
+    base_query[[cfg$page_size_param]] <- items_per_page
   }
+  query <- if (!is.null(query_params)) modifyList(base_query, query_params) else base_query
 
   # First request
   resp_data <- selma_request(con, full_url, query)
@@ -51,7 +50,7 @@ selma_get <- function(con = NULL, endpoint, query_params = NULL,
 
   abort(c(
     "Unexpected SELMA API response format.",
-    "i" = paste("Endpoint:", endpoint)
+    "i" = str_c("Endpoint: ", endpoint)
   ))
 }
 
@@ -66,7 +65,7 @@ selma_request <- function(con, url, query = NULL) {
       if (status == 401L) {
         "SELMA bearer token has expired or is invalid. Re-authenticate with selma_connect()."
       } else {
-        paste("SELMA API error. Status:", status, "URL:", url)
+        str_c("SELMA API error. Status: ", status, " URL: ", url)
       }
     }) |>
     httr2::req_perform()
@@ -80,8 +79,11 @@ selma_fetch_all_pages <- function(con, url, query, initial_data,
                                   items_per_page, max_pages, .progress) {
   cfg         <- api_cfg(con$api_version)
   total_items <- initial_data[[cfg$total_key]]
-  total_pages <- ceiling(total_items / items_per_page)
-  total_pages <- min(total_pages, max_pages)
+
+  # Derive actual page size from first response — v3 doesn't expose itemsPerPage
+  first_members    <- extract_members(initial_data, con$api_version)
+  actual_page_size <- max(nrow(bind_rows(first_members)), 1L)
+  total_pages      <- min(ceiling(total_items / actual_page_size), max_pages)
 
   if (.progress) {
     cli_alert_info("Fetching {total_pages} page{?s} ({total_items} items) from SELMA")
@@ -104,6 +106,8 @@ selma_fetch_all_pages <- function(con, url, query, initial_data,
   }
 
   combined <- bind_rows(all_data)
+  # Drop JSON-LD metadata before clean_names() to prevent @id → id collision
+  combined <- select(combined, -any_of(c("@id", "@type", "@context")))
   clean_names(combined)
 }
 
@@ -120,13 +124,17 @@ compact_query <- function(...) {
 
 #' Standardise raw SELMA data
 #'
-#' Handles Hydra JSON-LD format quirks: drops `@id` URI columns, renames
-#' `id_2` to `id`, applies `clean_names()`, and converts ID columns to
-#' character for safe joining.
+#' Applies `clean_names()`, strips IRI path references from v3 foreign key
+#' columns (e.g. `"/api/students/42"` → `"42"`), and soft-validates fields
+#' against the schema registry.
+#'
+#' JSON-LD metadata columns (`@id`, `@type`, `@context`) are dropped upstream
+#' in `selma_fetch_all_pages()` before `clean_names()` runs, so `id` always
+#' arrives here as the integer primary key.
 #'
 #' @param df Raw data frame from SELMA API.
-#' @param entity_type One of `"students"`, `"enrolments"`, `"intakes"`,
-#'   `"components"`, `"programmes"`.
+#' @param entity_type API endpoint name used to look up the schema registry.
+#' @param api_version `"v2"` or `"v3"`.
 #' @return A cleaned tibble.
 #' @noRd
 standardize_selma_data <- function(df, entity_type, api_version = "v2") {
@@ -134,45 +142,29 @@ standardize_selma_data <- function(df, entity_type, api_version = "v2") {
 
   cfg <- api_cfg(api_version)
 
-  # Drop Hydra @id column (URI path like "/app/students/123" or "/api/students/123")
-  if ("id" %in% names(df) && "id_2" %in% names(df)) {
-    df <- select(df, -"id", -any_of("type"))
-  } else if ("id" %in% names(df) && any(grepl(cfg$id_uri_pattern, df$id))) {
-    df <- select(df, -"id", -any_of("type"))
-  }
-
-  # Rename id_2 to id
-  if ("id_2" %in% names(df)) {
-    df <- rename(df, id = "id_2")
-  }
-
   df <- clean_names(df)
 
-  # Look up expected fields and ID columns from the schema registry
-  schema   <- .selma_schemas[[api_version]][[entity_type]]
-  id_cols  <- if (!is.null(schema)) {
-    schema$id_columns
-  } else {
-    # Fallback: any column matching *id pattern
-    grep("(^id$|_id$|id$)", names(df), value = TRUE)
+  # Strip IRI references from v3 foreign key columns (e.g. /api/students/42 → "42").
+  # v2 foreign keys are integers so is.character() excludes them naturally.
+  if (!is.null(cfg$id_uri_pattern)) {
+    iri_cols <- names(df)[vapply(df, function(col) {
+      is.character(col) && any(str_detect(col, cfg$id_uri_pattern), na.rm = TRUE)
+    }, logical(1L))]
+    if (length(iri_cols) > 0L) {
+      df <- mutate(df, across(all_of(iri_cols), ~ str_extract(.x, "[^/]+$")))
+    }
   }
 
   # Soft field validation — warn when expected fields are absent
+  schema <- .selma_schemas[[api_version]][[entity_type]]
   if (!is.null(schema)) {
     missing_fields <- setdiff(schema$fields, names(df))
     if (length(missing_fields) > 0L) {
       cli_warn(c(
         "SELMA {entity_type} ({api_version}): {length(missing_fields)} expected field{?s} missing from response.",
-        "i" = paste(missing_fields, collapse = ", "),
+        "i" = str_c(missing_fields, collapse = ", "),
         "i" = "The SELMA API may have changed. Check for a package update."
       ))
-    }
-  }
-
-  # Convert ID columns to character for safe joining
-  for (col in id_cols) {
-    if (col %in% names(df)) {
-      df[[col]] <- as.character(df[[col]])
     }
   }
 
@@ -300,13 +292,13 @@ selma_fetch_entity <- function(con = NULL, endpoint, entity_label = endpoint,
 selma_get_one <- function(endpoint, id, con = NULL) {
   con <- selma_get_connection(con)
   cfg <- api_cfg(con$api_version)
-  url <- paste0(con$base_url, cfg$path_prefix, endpoint, "/", id)
+  url <- str_c(con$base_url, cfg$path_prefix, endpoint, "/", id)
   resp <- selma_request(con, url)
   # Remove JSON-LD metadata
   resp[c("@context", "@id", "@type")] <- NULL
   if (length(resp) == 0) {
     abort(c(
-      paste0("No record found for ", endpoint, "/", id),
+      str_c("No record found for ", endpoint, "/", id),
       "i" = "Check that the ID exists in SELMA."
     ))
   }
@@ -317,5 +309,57 @@ selma_get_one <- function(endpoint, id, con = NULL) {
     x
   })
   result <- as_tibble(as.data.frame(resp, stringsAsFactors = FALSE))
-  clean_names(result)
+  standardize_selma_data(result, endpoint, api_version = con$api_version)
+}
+
+#' Factory: create a standard entity fetch function driven by the schema registry
+#'
+#' The returned function accepts a `filter` list whose names must be valid API
+#' query parameter names for that entity and version (sourced from the OpenAPI
+#' spec via `.selma_schemas`). Unknown params emit a warning and are dropped.
+#'
+#' @param entity API endpoint name, e.g. `"enrolments"`.
+#' @return A function with signature
+#'   `(con, filter, cache, cache_dir, cache_hours, items_per_page, .progress)`.
+#' @noRd
+make_entity_fetcher <- function(entity) {
+  force(entity)
+  function(con = NULL, filter = list(),
+           cache = FALSE, cache_dir = "selma_cache",
+           cache_hours = 24, items_per_page = 100L, .progress = TRUE) {
+
+    con   <- selma_get_connection(con)
+    valid <- .selma_schemas[[con$api_version]][[entity]]$params %||% character()
+
+    unknown <- setdiff(names(filter), valid)
+    if (length(unknown) > 0) {
+      cli_warn(c(
+        "Unknown filter params for {entity} ({con$api_version}) — ignored:",
+        "x" = str_c(unknown, collapse = ", "),
+        "i" = "Valid params: {str_c(valid, collapse = ', ')}"
+      ))
+    }
+
+    query <- filter[intersect(names(filter), valid)]
+    query <- Filter(Negate(is.null), query)
+
+    use_cache <- cache && length(query) == 0
+    path      <- cache_path(cache_dir, entity)
+    if (use_cache && cache_is_fresh(path, cache_hours)) return(cache_load(path, entity))
+
+    data <- selma_get(con, entity,
+                      query_params    = if (length(query) > 0) query else NULL,
+                      items_per_page  = items_per_page,
+                      .progress       = .progress)
+    data <- standardize_selma_data(data, entity, api_version = con$api_version)
+
+    if (use_cache) {
+      cache_save(data, path, entity)
+    } else if (!cache && length(query) == 0 && nrow(data) > 100L) {
+      cli_alert_info(
+        "Tip: pass {.code cache = TRUE} to save this result locally and skip the API on repeat calls."
+      )
+    }
+    data
+  }
 }

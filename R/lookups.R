@@ -418,7 +418,13 @@ selma_enrolments_by_campus <- function(con = NULL, cache = FALSE,
 #' }
 selma_milestones <- function(milestone_id, con = NULL) {
   con <- selma_get_connection(con)
-  url <- paste0(con$base_url, "app/milestones/", milestone_id)
+  if (con$api_version == "v3") {
+    abort(c(
+      "selma_milestones() uses a v2-only endpoint with no v3 equivalent.",
+      "i" = "Check the v3 API spec for an alternative endpoint."
+    ))
+  }
+  url <- str_c(con$base_url, "app/milestones/", milestone_id)
   resp <- selma_request(con, url)
   resp[c("@context", "@id", "@type")] <- NULL
   resp <- lapply(resp, function(x) {

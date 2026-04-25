@@ -111,11 +111,11 @@ test_that("print.selma_connection shows api_version", {
 # standardize_selma_data() — v3 URI pattern
 # ---------------------------------------------------------------------------
 
-test_that("standardize_selma_data drops v3 @id URI column", {
+test_that("standardize_selma_data: v3 @id drop happens upstream, id is integer on arrival", {
+  # @id/@type/@context are dropped in selma_fetch_all_pages() before clean_names().
+  # By the time data reaches standardize_selma_data(), id is already the integer PK.
   df <- data.frame(
-    id   = c("/api/students/1", "/api/students/2"),
-    id_2 = c(1L, 2L),
-    type = c("Student", "Student"),
+    id         = c(1L, 2L),
     first_name = c("Alice", "Bob"),
     stringsAsFactors = FALSE
   )
@@ -124,9 +124,8 @@ test_that("standardize_selma_data drops v3 @id URI column", {
     selmaR:::standardize_selma_data(df, "students", api_version = "v3")
   )
 
-  expect_false("type" %in% names(result))
   expect_true("id" %in% names(result))
-  expect_equal(result$id, c("1", "2"))
+  expect_equal(result$id, c(1L, 2L))
   expect_true("first_name" %in% names(result))
 })
 

@@ -2,60 +2,61 @@ test_that("selma_get rejects non-connection objects", {
   expect_error(selma_get("not_a_connection", "students"), "selma_connection")
 })
 
-test_that("standardize_selma_data drops Hydra @id column", {
+test_that("standardize_selma_data: id arrives as integer after upstream @id drop", {
+  # Simulates data as it arrives from selma_fetch_all_pages() —
+  # @id/@type/@context have already been dropped; id is the integer primary key.
   df <- data.frame(
-    id = c("/app/students/1", "/app/students/2"),
-    id_2 = c(1L, 2L),
-    type = c("Student", "Student"),
-    forename = c("Alice", "Bob"),
+    id         = c(1L, 2L),
+    first_name = c("Alice", "Bob"),
     stringsAsFactors = FALSE
   )
 
-  result <- suppressWarnings(selmaR:::standardize_selma_data(df, "students"))
+  result <- suppressWarnings(selmaR:::standardize_selma_data(df, "students", api_version = "v3"))
 
-  expect_false("type" %in% names(result))
   expect_true("id" %in% names(result))
-  expect_equal(result$id, c("1", "2"))
-  expect_true("forename" %in% names(result))
+  expect_equal(result$id, c(1L, 2L))
+  expect_true("first_name" %in% names(result))
 })
 
-test_that("standardize_selma_data handles id without id_2", {
+test_that("standardize_selma_data: v3 IRI foreign keys are stripped to bare segment", {
   df <- data.frame(
-    id = c("/app/intakes/10", "/app/intakes/20"),
-    intakeid = c(10L, 20L),
+    id      = c(1L, 2L),
+    student = c("/api/students/42", "/api/students/99"),
+    intake  = c("/api/intakes/10", "/api/intakes/10"),
     stringsAsFactors = FALSE
   )
 
-  result <- suppressWarnings(selmaR:::standardize_selma_data(df, "intakes"))
-  expect_true("intakeid" %in% names(result))
-  expect_equal(result$intakeid, c("10", "20"))
+  result <- suppressWarnings(selmaR:::standardize_selma_data(df, "enrolments", api_version = "v3"))
+
+  expect_equal(result$student, c("42", "99"))
+  expect_equal(result$intake,  c("10", "10"))
+  expect_equal(result$id,      c(1L, 2L))
 })
 
-test_that("standardize_selma_data converts IDs to character", {
+test_that("standardize_selma_data: v2 integer foreign keys are not modified", {
   df <- data.frame(
-    id_2 = 1:3,
-    student_id = 10:12,
-    intake_id = 100:102,
-    id = c("/app/enrolments/1", "/app/enrolments/2", "/app/enrolments/3"),
+    id        = c(1L, 2L),
+    student_id = c(42L, 99L),
+    intake_id  = c(10L, 10L),
     stringsAsFactors = FALSE
   )
 
-  result <- suppressWarnings(selmaR:::standardize_selma_data(df, "enrolments"))
-  expect_type(result$id, "character")
-  expect_type(result$student_id, "character")
-  expect_type(result$intake_id, "character")
+  result <- suppressWarnings(selmaR:::standardize_selma_data(df, "enrolments", api_version = "v2"))
+
+  expect_equal(result$student_id, c(42L, 99L))
+  expect_equal(result$intake_id,  c(10L, 10L))
 })
 
 test_that("standardize_selma_data applies clean_names", {
   df <- data.frame(
     FirstName = "Alice",
-    LastName = "Smith",
+    LastName  = "Smith",
     stringsAsFactors = FALSE
   )
 
   result <- suppressWarnings(selmaR:::standardize_selma_data(df, "students"))
   expect_true("first_name" %in% names(result))
-  expect_true("last_name" %in% names(result))
+  expect_true("last_name"  %in% names(result))
 })
 
 test_that("standardize_selma_data handles empty data frame", {

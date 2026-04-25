@@ -25,8 +25,14 @@
     view_key       = "hydra:view",
     next_key       = "hydra:next",
 
-    # Pattern used to identify and strip Hydra @id URI columns
-    id_uri_pattern = "^/app/"
+    # v2 foreign keys are integers — no IRI stripping needed
+    id_uri_pattern   = NULL,
+
+    # Query param name for page size
+    page_size_param  = "itemsPerPage",
+
+    # No endpoint aliases needed — v2 names are canonical
+    endpoint_aliases = list()
   ),
 
   v3 = list(
@@ -34,9 +40,9 @@
     path_prefix    = "api/",
     auth_endpoint  = "api/auth",
 
-    # Auth body field names (v3 uses email/password)
-    auth_username_field = "email",
-    auth_password_field = "password",
+    # Auth body field names (v3 spec: username + secret)
+    auth_username_field = "username",
+    auth_password_field = "secret",
 
     # Hydra JSON-LD pagination keys (v3 drops the "hydra:" namespace prefix)
     member_key     = "member",
@@ -44,10 +50,48 @@
     view_key       = "view",
     next_key       = "next",
 
-    # Pattern used to identify and strip Hydra @id URI columns
-    id_uri_pattern = "^/api/"
+    # v3 foreign keys are IRI strings (format: iri-reference) — strip trailing segment
+    id_uri_pattern   = "^/api/",
+
+    # v3 does not expose an itemsPerPage parameter
+    page_size_param  = NULL,
+
+    # Maps v2-style endpoint names used in package functions to v3 canonical paths
+    endpoint_aliases = list(
+      "ethnicities"              = "new_zealand_ethnicities",
+      "nz_iwis"                  = "new_zealand_iwis",
+      "n_z_residential_statuses" = "new_zealand_residential_statuses",
+      "secondary_schools"        = "new_zealand_secondary_schools",
+      "secondary_quals"          = "new_zealand_secondary_school_qualifications",
+      "withdrawal_reason_codes"  = "withdrawal_reasons",
+      "withdrawal_codes"         = "withdrawal_reasons",
+      "enr_status_codes"         = "enrolment_statuses",
+      "enr_by_campus"            = "campuses",
+      "student_contacts"         = "student_contact_associations",
+      "student_relations"        = "student_contact_association_types",
+      "student_programmes"       = "programme_progresses",
+      "notes-events"             = "comments",
+      "classes"                  = "sys_classes",
+      "class_enrolment"          = "sys_class_sys_users",
+      "student_classes"          = "sys_class_sys_users"
+    )
   )
 )
+
+#' Resolve an endpoint name to its version-canonical path segment
+#'
+#' Looks up `endpoint` in the version's `endpoint_aliases` table. Returns the
+#' alias if one exists, otherwise returns `endpoint` unchanged. This allows
+#' package functions to use stable internal names while the correct v2/v3 path
+#' is resolved at request time.
+#'
+#' @param endpoint Endpoint name as used internally (e.g. `"nz_iwis"`).
+#' @param api_version Character: `"v2"` or `"v3"`.
+#' @return Canonical endpoint path segment for the given version.
+#' @noRd
+resolve_endpoint <- function(endpoint, api_version) {
+  .api_config[[api_version]]$endpoint_aliases[[endpoint]] %||% endpoint
+}
 
 #' Look up version config for a connection
 #'
@@ -58,7 +102,7 @@ api_cfg <- function(api_version) {
   cfg <- .api_config[[api_version]]
   if (is.null(cfg)) {
     abort(c(
-      paste0("Unknown api_version: '", api_version, "'."),
+      str_c("Unknown api_version: '", api_version, "'."),
       "i" = "Must be one of: 'v2', 'v3'."
     ))
   }
@@ -98,7 +142,7 @@ extract_members <- function(page_data, api_version) {
   abort(c(
     "SELMA API response contains no member data.",
     "x" = "Neither '{cfg$member_key}' nor '{alt_key}' found in response.",
-    "i" = paste("Response keys:", paste(names(page_data), collapse = ", "))
+    "i" = str_c("Response keys: ", str_c(names(page_data), collapse = ", "))
   ))
 }
 
@@ -114,7 +158,7 @@ extract_members <- function(page_data, api_version) {
 #' @noRd
 selma_detect_api_version <- function(base_url, token) {
   # Probe v3 first (newer, preferred)
-  v3_url <- paste0(base_url, .api_config$v3$path_prefix, "students?page=1&itemsPerPage=1")
+  v3_url <- str_c(base_url, .api_config$v3$path_prefix, "students?page=1&itemsPerPage=1")
 
   resp <- tryCatch(
     httr2::request(v3_url) |>
