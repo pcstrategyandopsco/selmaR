@@ -99,7 +99,7 @@ selma_fetch_all_pages <- function(con, url, query, initial_data,
     members    <- extract_members(page_data, con$api_version)
 
     if (!is.null(members)) {
-      all_data[[current_page]] <- as.data.frame(members)
+      all_data[[current_page]] <- bind_rows(members)
     }
   }
 

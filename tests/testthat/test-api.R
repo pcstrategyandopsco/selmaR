@@ -11,7 +11,7 @@ test_that("standardize_selma_data drops Hydra @id column", {
     stringsAsFactors = FALSE
   )
 
-  result <- selmaR:::standardize_selma_data(df, "students")
+  result <- suppressWarnings(selmaR:::standardize_selma_data(df, "students"))
 
   expect_false("type" %in% names(result))
   expect_true("id" %in% names(result))
@@ -26,7 +26,7 @@ test_that("standardize_selma_data handles id without id_2", {
     stringsAsFactors = FALSE
   )
 
-  result <- selmaR:::standardize_selma_data(df, "intakes")
+  result <- suppressWarnings(selmaR:::standardize_selma_data(df, "intakes"))
   expect_true("intakeid" %in% names(result))
   expect_equal(result$intakeid, c("10", "20"))
 })
@@ -40,7 +40,7 @@ test_that("standardize_selma_data converts IDs to character", {
     stringsAsFactors = FALSE
   )
 
-  result <- selmaR:::standardize_selma_data(df, "enrolments")
+  result <- suppressWarnings(selmaR:::standardize_selma_data(df, "enrolments"))
   expect_type(result$id, "character")
   expect_type(result$student_id, "character")
   expect_type(result$intake_id, "character")
@@ -53,7 +53,7 @@ test_that("standardize_selma_data applies clean_names", {
     stringsAsFactors = FALSE
   )
 
-  result <- selmaR:::standardize_selma_data(df, "students")
+  result <- suppressWarnings(selmaR:::standardize_selma_data(df, "students"))
   expect_true("first_name" %in% names(result))
   expect_true("last_name" %in% names(result))
 })
