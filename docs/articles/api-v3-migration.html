@@ -386,13 +386,23 @@ below are your reference.</p>
 </tr>
 </tbody>
 </table>
-<p>Fields <strong>removed in v3</strong>: <code>nsn</code>,
-<code>contacts</code>, <code>initials</code>,
-<code>identitychecked</code>, <code>international</code>,
-<code>mainagent</code>, <code>austresidency</code>,
-<code>residency</code>, <code>residentialstatus</code>,
-<code>passportnumber</code>, <code>passportexpiry</code>,
-<code>visatype</code>, <code>visanumber</code>, <code>visaexpiry</code>,
+<p><strong><code>nsn</code> (integer) →
+<code>national_student_number</code> (string)</strong>: Moved out of the
+main student record into the <code>new_zealand_student_extension</code>
+nested object. Also available as its own paginated endpoint:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Fetch NZ student extensions (includes national_student_number)</span></span>
+<span><span class="va">nz_ext</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_get.html">selma_get</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"new_zealand_student_extensions"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Or for a single student</span></span>
+<span><span class="va">nz_ext</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_get.html">selma_get</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"new_zealand_student_extensions/students/42"</span><span class="op">)</span></span></code></pre></div>
+<p>Fields <strong>removed in v3</strong>: <code>contacts</code>,
+<code>initials</code>, <code>identitychecked</code>,
+<code>international</code>, <code>mainagent</code>,
+<code>austresidency</code>, <code>residency</code>,
+<code>residentialstatus</code>, <code>passportnumber</code>,
+<code>passportexpiry</code>, <code>visatype</code>,
+<code>visanumber</code>, <code>visaexpiry</code>,
 <code>ethnicity1</code>–<code>3</code>,
 <code>iwi1</code>–<code>3</code>.</p>
 <p>Fields <strong>new in v3</strong>: <code>pronoun</code>,
@@ -604,7 +614,7 @@ replaced by <code>custom_field_values</code> in v3.</p>
 <p>A small number of v2 endpoints have no v3 equivalent. Functions
 wrapping these endpoints detect the connection version and abort with an
 informative error rather than failing silently:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># These abort on v3 connections with a clear message</span></span>
 <span><span class="fu"><a href="../reference/selma_student_custom_fields.html">selma_student_custom_fields</a></span><span class="op">(</span><span class="st">"123"</span>, <span class="va">con</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Error: selma_student_custom_fields() uses a v2-only endpoint with no v3 equivalent.</span></span>
@@ -616,7 +626,7 @@ informative error rather than failing silently:</p>
 <span><span class="fu"><a href="../reference/selma_intake_enrolments.html">selma_intake_enrolments</a></span><span class="op">(</span>intake_id <span class="op">=</span> <span class="fl">123</span>, con <span class="op">=</span> <span class="va">con</span><span class="op">)</span></span></code></pre></div>
 <p>For intake enrolments specifically, the v3 approach is better — use
 the <code>filter</code> argument on <code><a href="../reference/selma_enrolments.html">selma_enrolments()</a></code>:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># v3 equivalent — returns only enrolments for intake 123</span></span>
 <span><span class="va">enrolments</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_enrolments.html">selma_enrolments</a></span><span class="op">(</span><span class="va">con</span>, filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>intake <span class="op">=</span> <span class="st">"123"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <hr>
@@ -626,7 +636,7 @@ the <code>filter</code> argument on <code><a href="../reference/selma_enrolments
 </h2>
 <p>If you need scripts that run against both v2 and v3 instances, check
 <code>con$api_version</code> to branch on column name differences:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">name_col</span>   <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="va">con</span><span class="op">$</span><span class="va">api_version</span> <span class="op">==</span> <span class="st">"v3"</span><span class="op">)</span> <span class="st">"first_name"</span> <span class="kw">else</span> <span class="st">"forename"</span></span>
 <span><span class="va">status_col</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="va">con</span><span class="op">$</span><span class="va">api_version</span> <span class="op">==</span> <span class="st">"v3"</span><span class="op">)</span> <span class="st">"enrolment_status"</span> <span class="kw">else</span> <span class="st">"enrstatus"</span></span>
 <span></span>
@@ -634,7 +644,7 @@ the <code>filter</code> argument on <code><a href="../reference/selma_enrolments
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">.data</span><span class="op">[[</span><span class="va">status_col</span><span class="op">]</span><span class="op">]</span> <span class="op">==</span> <span class="va">SELMA_STATUS_CONFIRMED</span><span class="op">)</span></span></code></pre></div>
 <p>Filter parameter names also differ. Pass parameters appropriate for
 the connected version:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># v2</span></span>
 <span><span class="va">smiths</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_students.html">selma_students</a></span><span class="op">(</span><span class="va">con</span>, filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>forename <span class="op">=</span> <span class="st">"Alice"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -649,14 +659,14 @@ rather than sending a bad request to the API.</p>
 <h2 id="checking-whats-available">Checking what’s available<a class="anchor" aria-label="anchor" href="#checking-whats-available"></a>
 </h2>
 <p>To inspect valid filter parameters for any entity at runtime:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># v3 filter parameters for students</span></span>
 <span><span class="fu">selmaR</span><span class="fu">:::</span><span class="va">.selma_schemas</span><span class="op">$</span><span class="va">v3</span><span class="op">$</span><span class="va">students</span><span class="op">$</span><span class="va">params</span></span>
 <span></span>
 <span><span class="co"># v3 filter parameters for enrolments</span></span>
 <span><span class="fu">selmaR</span><span class="fu">:::</span><span class="va">.selma_schemas</span><span class="op">$</span><span class="va">v3</span><span class="op">$</span><span class="va">enrolments</span><span class="op">$</span><span class="va">params</span></span></code></pre></div>
 <p>And to confirm the detected version:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/selma_connect.html">selma_connect</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Connected to SELMA"</span>, <span class="va">con</span><span class="op">$</span><span class="va">api_version</span>, <span class="st">"at"</span>, <span class="va">con</span><span class="op">$</span><span class="va">base_url</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 </div>
