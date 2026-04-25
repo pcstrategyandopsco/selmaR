@@ -27,6 +27,9 @@ selma_env <- new.env(parent = emptyenv())
 #' @param base_url SELMA base URL (e.g. `"https://myorg.selma.co.nz/"`).
 #' @param email API login email.
 #' @param password API login password.
+#' @param api_version SELMA API version: `"v2"`, `"v3"`, or `NULL` (default)
+#'   to auto-detect. A SELMA instance runs one version — the value is stored
+#'   on the connection object and used for all subsequent requests.
 #' @param config_file Path to a config YAML file (default `"config.yml"`).
 #'   Set to `NULL` to skip config file lookup.
 #' @return A `selma_connection` object (invisibly). The connection is also
@@ -34,20 +37,21 @@ selma_env <- new.env(parent = emptyenv())
 #' @export
 #' @examples
 #' \dontrun{
-#' # Connect once — all functions use it automatically
+#' # Connect once — all functions use it automatically (api_version auto-detected)
 #' selma_connect()
 #' students <- selma_students()
 #' enrolments <- selma_enrolments()
 #'
-#' # Or pass credentials directly
+#' # Specify API version explicitly
 #' selma_connect(
 #'   base_url = "https://myorg.selma.co.nz/",
 #'   email = "api@selma.co.nz",
-#'   password = "secret"
+#'   password = "secret",
+#'   api_version = "v3"
 #' )
 #' }
 selma_connect <- function(base_url = NULL, email = NULL, password = NULL,
-                          config_file = "config.yml") {
+                          api_version = NULL, config_file = "config.yml") {
 
   # Resolve credentials: args > config.yml > env vars
   cfg <- selma_resolve_config(base_url, email, password, config_file)
@@ -71,6 +75,17 @@ selma_connect <- function(base_url = NULL, email = NULL, password = NULL,
     ))
   }
 
+  # Validate api_version if provided
+  if (!is.null(api_version)) {
+    api_version <- tryCatch(
+      match.arg(api_version, c("v2", "v3")),
+      error = function(e) abort(c(
+        paste0("Invalid api_version: '", api_version, "'."),
+        "i" = "Must be 'v2', 'v3', or NULL (auto-detect)."
+      ))
+    )
+  }
+
   # Ensure trailing slash
   if (!grepl("/$", cfg$base_url)) {
     cfg$base_url <- paste0(cfg$base_url, "/")
@@ -78,10 +93,16 @@ selma_connect <- function(base_url = NULL, email = NULL, password = NULL,
 
   token <- selma_auth(cfg$base_url, cfg$email, cfg$password)
 
+  # Auto-detect api_version if not specified
+  if (is.null(api_version)) {
+    api_version <- selma_detect_api_version(cfg$base_url, token)
+  }
+
   con <- structure(
     list(
-      base_url = cfg$base_url,
-      token = token
+      base_url    = cfg$base_url,
+      token       = token,
+      api_version = api_version
     ),
     class = "selma_connection"
   )
@@ -89,7 +110,7 @@ selma_connect <- function(base_url = NULL, email = NULL, password = NULL,
   # Store in package environment for automatic use
   selma_env$connection <- con
 
-  cli_alert_success("Connected to SELMA at {.url {cfg$base_url}}")
+  cli_alert_success("Connected to SELMA {api_version} at {.url {cfg$base_url}}")
   invisible(con)
 }
 
@@ -141,8 +162,9 @@ selma_get_connection <- function(con = NULL) {
 #' @export
 print.selma_connection <- function(x, ...) {
   cat("<selma_connection>\n")
-  cat("  Base URL:", x$base_url, "\n")
-  cat("  Token:   ", substr(x$token, 1, 20), "...\n")
+  cat("  Base URL:    ", x$base_url, "\n")
+  cat("  API version: ", x$api_version %||% "unknown", "\n")
+  cat("  Token:       ", substr(x$token, 1, 20), "...\n")
   invisible(x)
 }
 

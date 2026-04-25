@@ -23,7 +23,8 @@ selma_get <- function(con = NULL, endpoint, query_params = NULL,
                       .progress = TRUE) {
   con <- selma_get_connection(con)
 
-  full_url <- paste0(con$base_url, "app/", endpoint)
+  cfg      <- api_cfg(con$api_version)
+  full_url <- paste0(con$base_url, cfg$path_prefix, endpoint)
 
   base_query <- list(page = 1L, itemsPerPage = items_per_page)
   query <- if (!is.null(query_params)) {
@@ -35,8 +36,8 @@ selma_get <- function(con = NULL, endpoint, query_params = NULL,
   # First request
   resp_data <- selma_request(con, full_url, query)
 
-  # Check if paginated (has hydra:totalItems)
-  if (!is.null(resp_data[["hydra:totalItems"]])) {
+  # Check if paginated
+  if (!is.null(resp_data[[cfg$total_key]])) {
     return(selma_fetch_all_pages(
       con, full_url, query, resp_data, items_per_page, max_pages, .progress
     ))
@@ -77,7 +78,8 @@ selma_request <- function(con, url, query = NULL) {
 #' @noRd
 selma_fetch_all_pages <- function(con, url, query, initial_data,
                                   items_per_page, max_pages, .progress) {
-  total_items <- initial_data[["hydra:totalItems"]]
+  cfg         <- api_cfg(con$api_version)
+  total_items <- initial_data[[cfg$total_key]]
   total_pages <- ceiling(total_items / items_per_page)
   total_pages <- min(total_pages, max_pages)
 
@@ -93,9 +95,9 @@ selma_fetch_all_pages <- function(con, url, query, initial_data,
     }
 
     query$page <- current_page
-    page_data <- selma_request(con, url, query)
+    page_data  <- selma_request(con, url, query)
+    members    <- extract_members(page_data, con$api_version)
 
-    members <- page_data[["hydra:member"]]
     if (!is.null(members)) {
       all_data[[current_page]] <- as.data.frame(members)
     }
@@ -127,59 +129,47 @@ compact_query <- function(...) {
 #'   `"components"`, `"programmes"`.
 #' @return A cleaned tibble.
 #' @noRd
-standardize_selma_data <- function(df, entity_type) {
+standardize_selma_data <- function(df, entity_type, api_version = "v2") {
   if (nrow(df) == 0) return(as_tibble(df))
 
-  # Drop Hydra @id column (URI path like "/app/students/123")
+  cfg <- api_cfg(api_version)
+
+  # Drop Hydra @id column (URI path like "/app/students/123" or "/api/students/123")
   if ("id" %in% names(df) && "id_2" %in% names(df)) {
     df <- select(df, -"id", -any_of("type"))
-  } else if ("id" %in% names(df) && any(grepl("^/app/", df$id))) {
+  } else if ("id" %in% names(df) && any(grepl(cfg$id_uri_pattern, df$id))) {
     df <- select(df, -"id", -any_of("type"))
   }
 
   # Rename id_2 to id
-
   if ("id_2" %in% names(df)) {
     df <- rename(df, id = "id_2")
   }
 
   df <- clean_names(df)
 
+  # Look up expected fields and ID columns from the schema registry
+  schema   <- .selma_schemas[[api_version]][[entity_type]]
+  id_cols  <- if (!is.null(schema)) {
+    schema$id_columns
+  } else {
+    # Fallback: any column matching *id pattern
+    grep("(^id$|_id$|id$)", names(df), value = TRUE)
+  }
+
+  # Soft field validation — warn when expected fields are absent
+  if (!is.null(schema)) {
+    missing_fields <- setdiff(schema$fields, names(df))
+    if (length(missing_fields) > 0L) {
+      cli_warn(c(
+        "SELMA {entity_type} ({api_version}): {length(missing_fields)} expected field{?s} missing from response.",
+        "i" = paste(missing_fields, collapse = ", "),
+        "i" = "The SELMA API may have changed. Check for a package update."
+      ))
+    }
+  }
 
   # Convert ID columns to character for safe joining
-  # Explicit mappings for core entities, plus generic pattern for all others
-  id_cols <- switch(entity_type,
-    students = "id",
-    enrolments = c("id", "student_id", "intake_id"),
-    intakes = c("intakeid", "progid"),
-    components = c("compenrid", "compid", "enrolid", "studentid"),
-    programmes = c("progid"),
-    notes = c("noteid", "student_id", "enrolmentid"),
-    addresses = c("addressid", "studentid", "contactid", "orgid"),
-    contacts = "id",
-    classes = c("id", "campusid"),
-    organisations = c("id", "orgparentid"),
-    campuses = "id",
-    student_contacts = c("id", "studentid", "contactid"),
-    student_programmes = c("student_id", "enrol_id", "prog_id", "parent_prog_id"),
-    student_relations = "id",
-    student_classes = c("student_id", "enrol_id", "campus_id"),
-    enrolment_awards = c("award_id", "enrol_id", "prog_id", "parent_prog_id"),
-    component_attempts = c("component_attempt_id", "compenrid"),
-    component_definitions = "compid",
-    class_enrolment = c("id", "enrolid", "studentid"),
-    intake_fees = "id",
-    grading_schemes = "id",
-    custom_fields = "id",
-    users = "id",
-    marketing_sources = "id",
-    {
-      # Default: convert any column ending in "id" or named "id" to character
-      id_pattern <- grep("(^id$|_id$|id$)", names(df), value = TRUE)
-      id_pattern
-    }
-  )
-
   for (col in id_cols) {
     if (col %in% names(df)) {
       df[[col]] <- as.character(df[[col]])
@@ -284,7 +274,7 @@ selma_fetch_entity <- function(con = NULL, endpoint, entity_label = endpoint,
     .progress = .progress
   )
 
-  data <- standardize_selma_data(data, entity_label)
+  data <- standardize_selma_data(data, entity_label, api_version = con$api_version)
 
   if (use_cache) cache_save(data, path, entity_label)
   data
@@ -309,7 +299,8 @@ selma_fetch_entity <- function(con = NULL, endpoint, entity_label = endpoint,
 #' }
 selma_get_one <- function(endpoint, id, con = NULL) {
   con <- selma_get_connection(con)
-  url <- paste0(con$base_url, "app/", endpoint, "/", id)
+  cfg <- api_cfg(con$api_version)
+  url <- paste0(con$base_url, cfg$path_prefix, endpoint, "/", id)
   resp <- selma_request(con, url)
   # Remove JSON-LD metadata
   resp[c("@context", "@id", "@type")] <- NULL

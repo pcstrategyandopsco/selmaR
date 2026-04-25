@@ -14,6 +14,7 @@
 #' @importFrom janitor clean_names
 #' @importFrom cli cli_alert_info cli_alert_success cli_alert_warning
 #'   cli_alert_danger cli_progress_bar cli_progress_update cli_progress_done
+#'   cli_warn
 #' @importFrom jsonlite fromJSON
 #' @importFrom lubridate ceiling_date days year month
 #' @importFrom stats setNames
