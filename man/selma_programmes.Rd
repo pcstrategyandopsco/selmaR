@@ -18,7 +18,8 @@ selma_programmes(
 \item{con}{A \code{selma_connection} object from \code{\link[=selma_connect]{selma_connect()}}, or \code{NULL}
 (default) to use the stored connection.}
 
-\item{status}{Filter by programme status (e.g. \code{"Active"}, \code{"Inactive"}).}
+\item{status}{Filter by programme status (e.g. \code{"Active"}, \code{"Inactive"}).
+v2 only (\code{progstatus}) — ignored on v3 with a warning.}
 
 \item{cache}{If \code{TRUE}, use RDS caching (default \code{FALSE}).}
 

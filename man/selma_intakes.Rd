@@ -21,13 +21,17 @@ selma_intakes(
 \item{con}{A \code{selma_connection} object from \code{\link[=selma_connect]{selma_connect()}}, or \code{NULL}
 (default) to use the stored connection.}
 
-\item{prog_id}{Filter by programme ID.}
+\item{prog_id}{Filter by programme ID. v2 only (\code{ProgID}) — ignored on
+v3 with a warning.}
 
-\item{status}{Filter by intake status (e.g. \code{"Open"}, \code{"Closed"}).}
+\item{status}{Filter by intake status (e.g. \code{"Open"}, \code{"Closed"}). v2
+only (\code{intakestatus}) — ignored on v3 with a warning.}
 
-\item{start_before}{Filter intakes starting before this date (ISO string).}
+\item{start_before}{Filter intakes starting before this date (ISO string).
+Maps to \code{intakestartdate[before]} (v2) or \code{start_date[before]} (v3).}
 
-\item{start_after}{Filter intakes starting after this date (ISO string).}
+\item{start_after}{Filter intakes starting after this date (ISO string).
+Maps to \code{intakestartdate[after]} (v2) or \code{start_date[after]} (v3).}
 
 \item{cache}{If \code{TRUE}, use RDS caching (default \code{FALSE}).}
 
@@ -49,7 +53,6 @@ Retrieves intake (cohort) records with dates and programme links.
 \dontrun{
 selma_connect()
 intakes <- selma_intakes()
-intakes <- selma_intakes(prog_id = "42")
 intakes <- selma_intakes(start_after = "2025-01-01")
 }
 }

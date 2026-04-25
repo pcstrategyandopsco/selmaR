@@ -22,6 +22,14 @@ Retrieves enrolments for a specific intake including nested student and
 component details. Unlike other endpoints, this returns non-paginated
 nested JSON that is flattened into a tibble.
 }
+\details{
+\strong{v2 only.} The \code{intake_enrolments} endpoint does not exist in the SELMA
+v3 API. For v3 connections, use \code{\link[=selma_enrolments]{selma_enrolments()}} with \code{intake_id}:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{# v3 equivalent:
+selma_enrolments(intake_id = 123)
+}\if{html}{\out{</div>}}
+}
 \examples{
 \dontrun{
 selma_connect()

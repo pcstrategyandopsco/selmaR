@@ -8,6 +8,7 @@ selma_connect(
   base_url = NULL,
   email = NULL,
   password = NULL,
+  api_version = NULL,
   config_file = "config.yml"
 )
 }
@@ -17,6 +18,10 @@ selma_connect(
 \item{email}{API login email.}
 
 \item{password}{API login password.}
+
+\item{api_version}{SELMA API version: \code{"v2"}, \code{"v3"}, or \code{NULL} (default)
+to auto-detect. A SELMA instance runs one version — the value is stored
+on the connection object and used for all subsequent requests.}
 
 \item{config_file}{Path to a config YAML file (default \code{"config.yml"}).
 Set to \code{NULL} to skip config file lookup.}
@@ -52,16 +57,17 @@ Create a \code{config.yml} in your project root (add to \code{.gitignore}!):
 
 \examples{
 \dontrun{
-# Connect once — all functions use it automatically
+# Connect once — all functions use it automatically (api_version auto-detected)
 selma_connect()
 students <- selma_students()
 enrolments <- selma_enrolments()
 
-# Or pass credentials directly
+# Specify API version explicitly
 selma_connect(
   base_url = "https://myorg.selma.co.nz/",
   email = "api@selma.co.nz",
-  password = "secret"
+  password = "secret",
+  api_version = "v3"
 )
 }
 }

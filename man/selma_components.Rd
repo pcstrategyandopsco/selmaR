@@ -19,9 +19,11 @@ selma_components(
 \item{con}{A \code{selma_connection} object from \code{\link[=selma_connect]{selma_connect()}}, or \code{NULL}
 (default) to use the stored connection.}
 
-\item{student_id}{Filter by student ID.}
+\item{student_id}{Filter by student ID. v2 only (\code{studentid}) — ignored
+on v3 with a warning. Use \code{enrol_id} on v3 instead.}
 
-\item{enrol_id}{Filter by enrolment ID.}
+\item{enrol_id}{Filter by enrolment ID.
+Maps to \code{enrolid} (v2) or \code{enrolment} (v3).}
 
 \item{cache}{If \code{TRUE}, use RDS caching (default \code{FALSE}).}
 
@@ -44,7 +46,6 @@ programme). This is typically the largest dataset.
 \dontrun{
 selma_connect()
 components <- selma_components()
-components <- selma_components(student_id = "123")
 components <- selma_components(enrol_id = "456")
 }
 }

@@ -6,6 +6,8 @@
 \usage{
 selma_enrolments(
   con = NULL,
+  intake_id = NULL,
+  student_id = NULL,
   cache = FALSE,
   cache_dir = "selma_cache",
   cache_hours = 24,
@@ -16,6 +18,12 @@ selma_enrolments(
 \arguments{
 \item{con}{A \code{selma_connection} object from \code{\link[=selma_connect]{selma_connect()}}, or \code{NULL}
 (default) to use the stored connection.}
+
+\item{intake_id}{Filter by intake ID. v3 only — ignored on v2 with a
+warning.}
+
+\item{student_id}{Filter by student ID. v3 only — ignored on v2 with a
+warning.}
 
 \item{cache}{If \code{TRUE}, use RDS caching (default \code{FALSE}).}
 
@@ -37,5 +45,6 @@ Retrieves all enrolment records linking students to intakes.
 \dontrun{
 selma_connect()
 enrolments <- selma_enrolments()
+enrolments <- selma_enrolments(intake_id = "123")  # v3 only
 }
 }

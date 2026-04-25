@@ -24,19 +24,23 @@ selma_students(
 \item{con}{A \code{selma_connection} object from \code{\link[=selma_connect]{selma_connect()}}, or \code{NULL}
 (default) to use the stored connection.}
 
-\item{surname}{Filter by surname (exact match).}
+\item{surname}{Filter by surname (exact match). Supported in v2 and v3.}
 
-\item{forename}{Filter by forename (exact match).}
+\item{forename}{Filter by forename / first name (exact match).
+Maps to \code{forename} (v2) or \code{first_name} (v3).}
 
-\item{email1}{Filter by primary email (exact match).}
+\item{email1}{Filter by primary email (exact match).
+Maps to \code{email1} (v2) or \code{email_primary} (v3).}
 
-\item{dob}{Filter by date of birth (ISO date string, e.g. \code{"1990-01-15"}).}
+\item{dob}{Filter by date of birth (ISO date string, e.g. \code{"1990-01-15"}).
+Maps to \code{dob} (v2) or \code{date_of_birth} (v3).}
 
-\item{third_party_id}{Filter by ThirdPartyID.}
+\item{third_party_id}{Filter by ThirdPartyID / other_id_1.}
 
-\item{third_party_id2}{Filter by ThirdPartyID2.}
+\item{third_party_id2}{Filter by ThirdPartyID2 / other_id_2.}
 
-\item{organisation}{Filter by organisation ID.}
+\item{organisation}{Filter by organisation ID. v2 only — ignored on v3
+with a warning.}
 
 \item{cache}{If \code{TRUE}, use RDS caching (default \code{FALSE}).}
 

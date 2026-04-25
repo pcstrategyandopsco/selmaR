@@ -4,6 +4,14 @@
 #' component details. Unlike other endpoints, this returns non-paginated
 #' nested JSON that is flattened into a tibble.
 #'
+#' **v2 only.** The `intake_enrolments` endpoint does not exist in the SELMA
+#' v3 API. For v3 connections, use [selma_enrolments()] with `intake_id`:
+#'
+#' ```r
+#' # v3 equivalent:
+#' selma_enrolments(intake_id = 123)
+#' ```
+#'
 #' @inheritParams selma_students
 #' @param intake_id Integer intake ID to fetch enrolments for.
 #' @return A tibble of flattened intake enrolment records.
@@ -15,6 +23,14 @@
 #' }
 selma_intake_enrolments <- function(con = NULL, intake_id, .progress = TRUE) {
   con <- selma_get_connection(con)
+
+  if (con$api_version == "v3") {
+    abort(c(
+      "selma_intake_enrolments() is not available for SELMA v3.",
+      "i" = "Use selma_enrolments(intake_id = {intake_id}) instead.",
+      "i" = "The v3 API exposes intake filtering directly on the enrolments endpoint."
+    ))
+  }
 
   if (missing(intake_id) || is.null(intake_id) || is.na(intake_id)) {
     abort("`intake_id` is required for selma_intake_enrolments().")
