@@ -1,7 +1,7 @@
 # Join enrolments with student details
 
-Convenience function that joins enrolments to students, giving you a
-combined tibble with student contact details alongside each enrolment.
+Convenience function that joins enrolments to students. Works on both v2
+and v3 data — the join key is detected automatically from column names.
 
 ## Usage
 

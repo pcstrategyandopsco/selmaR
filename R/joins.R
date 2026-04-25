@@ -148,33 +148,58 @@ selma_join_programmes <- function(intakes, programmes) {
 
 #' Join notes to students
 #'
-#' Links note records to student records. On v2, notes have a direct
-#' `student_id` foreign key. On v3, notes (comments) are linked via events
-#' rather than directly to students — this function works on v2 only and
-#' aborts with an informative message on v3.
+#' Links note records to student records. Works on both v2 and v3 data:
+#'
+#' - **v2**: notes have a direct `student_id` foreign key — joined in one step.
+#' - **v3**: notes (comments) link to students via events. Pass the events
+#'   tibble from [selma_events()] via the `events` argument to enable the
+#'   two-step join: comments → events → students.
 #'
 #' @param notes A tibble from [selma_notes()].
 #' @param students A tibble from [selma_students()].
+#' @param events A tibble from [selma_events()] (required for v3 data, ignored
+#'   on v2).
 #' @return A tibble with note and student columns joined.
 #' @export
 #' @examples
 #' \dontrun{
 #' con <- selma_connect()
-#' notes_with_students <- selma_join_notes(
-#'   selma_notes(con), selma_students(con)
+#'
+#' # v2
+#' selma_join_notes(selma_notes(con), selma_students(con))
+#'
+#' # v3
+#' selma_join_notes(
+#'   selma_notes(con),
+#'   selma_students(con),
+#'   events = selma_events(con)
 #' )
 #' }
-selma_join_notes <- function(notes, students) {
+selma_join_notes <- function(notes, students, events = NULL) {
   if ("event" %in% names(notes)) {
-    abort(c(
-      "selma_join_notes() does not support v3 data.",
-      "i" = "In v3, comments (notes) link to students via events, not directly.",
-      "i" = "Join via: notes |> left_join(events) |> left_join(students)."
-    ))
+    # v3: comments → events → students (two-step join)
+    if (is.null(events)) {
+      abort(c(
+        "selma_join_notes() requires an events tibble for v3 data.",
+        "i" = "In v3, comments link to students via events — not directly.",
+        "i" = "Fetch events with selma_events(con) and pass as events = ..."
+      ))
+    }
+    # Step 1: join comments to events
+    notes_events <- notes |>
+      mutate(.event_fk = as.integer(event)) |>
+      left_join(events, by = c(".event_fk" = "id"), suffix = c("", ".event")) |>
+      select(-.event_fk)
+    # Step 2: join to students via event.student
+    notes_events |>
+      mutate(.student_fk = as.integer(student)) |>
+      left_join(students, by = c(".student_fk" = "id"), suffix = c("", ".student")) |>
+      select(-.student_fk)
+  } else {
+    left_join(notes, students,
+              by = c("student_id" = "id"),
+              suffix = c("", ".student"))
   }
-  left_join(notes, students,
-            by = c("student_id" = "id"),
-            suffix = c("", ".student"))
 }
 
 #' Join addresses to students
@@ -235,33 +260,49 @@ selma_join_classes <- function(classes, campuses) {
   }
 }
 
-#' Join component attempts to enrolment components
+#' Join component attempts (or grades) to enrolment components
 #'
 #' Links assessment attempt records to their parent enrolment components.
-#' The `enrolment_component_attempts` endpoint is v2-only — this function
-#' aborts with an informative message if called with v3 data.
+#' Works on both v2 and v3 data:
 #'
-#' @param attempts A tibble from [selma_component_attempts()].
+#' - **v2**: pass a tibble from [selma_component_attempts()] — joined via
+#'   the shared `compenrid` key.
+#' - **v3**: pass a tibble from [selma_component_grades()] — joined via the
+#'   `enrolment_component` IRI-reference column.
+#'
+#' @param attempts A tibble from [selma_component_attempts()] (v2) or
+#'   [selma_component_grades()] (v3).
 #' @param components A tibble from [selma_components()].
-#' @return A tibble with attempt and component columns joined.
+#' @return A tibble with attempt/grade and component columns joined.
 #' @export
 #' @examples
 #' \dontrun{
 #' con <- selma_connect()
-#' attempt_details <- selma_join_attempts(
-#'   selma_component_attempts(con), selma_components(con)
-#' )
+#'
+#' # v2
+#' selma_join_attempts(selma_component_attempts(con), selma_components(con))
+#'
+#' # v3
+#' selma_join_attempts(selma_component_grades(con), selma_components(con))
 #' }
 selma_join_attempts <- function(attempts, components) {
-  if (!"compenrid" %in% names(attempts)) {
+  if ("enrolment_component" %in% names(attempts)) {
+    # v3: enrolment_component is character (IRI-stripped); components PK is id
+    attempts |>
+      mutate(.fk = as.integer(enrolment_component)) |>
+      left_join(components, by = c(".fk" = "id"), suffix = c("", ".component")) |>
+      select(-.fk)
+  } else if ("compenrid" %in% names(attempts)) {
+    # v2: both tables share compenrid as the join key
+    left_join(attempts, components,
+              by = "compenrid",
+              suffix = c("", ".component"))
+  } else {
     abort(c(
-      "selma_join_attempts() requires v2 data.",
-      "i" = "The enrolment_component_attempts endpoint does not exist in SELMA v3."
+      "selma_join_attempts() could not determine data version.",
+      "i" = "Expected 'enrolment_component' (v3, from selma_component_grades()) or 'compenrid' (v2)."
     ))
   }
-  left_join(attempts, components,
-            by = "compenrid",
-            suffix = c("", ".component"))
 }
 
 #' Build a full component pipeline

@@ -1,6 +1,7 @@
 # Join addresses to students
 
-Links address records to their associated students.
+Links address records to their associated students. Works on v2 and v3
+data.
 
 ## Usage
 

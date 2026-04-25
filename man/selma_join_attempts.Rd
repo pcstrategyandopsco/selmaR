@@ -2,28 +2,39 @@
 % Please edit documentation in R/joins.R
 \name{selma_join_attempts}
 \alias{selma_join_attempts}
-\title{Join component attempts to enrolment components}
+\title{Join component attempts (or grades) to enrolment components}
 \usage{
 selma_join_attempts(attempts, components)
 }
 \arguments{
-\item{attempts}{A tibble from \code{\link[=selma_component_attempts]{selma_component_attempts()}}.}
+\item{attempts}{A tibble from \code{\link[=selma_component_attempts]{selma_component_attempts()}} (v2) or
+\code{\link[=selma_component_grades]{selma_component_grades()}} (v3).}
 
 \item{components}{A tibble from \code{\link[=selma_components]{selma_components()}}.}
 }
 \value{
-A tibble with attempt and component columns joined.
+A tibble with attempt/grade and component columns joined.
 }
 \description{
 Links assessment attempt records to their parent enrolment components.
-The \code{enrolment_component_attempts} endpoint is v2-only — this function
-aborts with an informative message if called with v3 data.
+Works on both v2 and v3 data:
+}
+\details{
+\itemize{
+\item \strong{v2}: pass a tibble from \code{\link[=selma_component_attempts]{selma_component_attempts()}} — joined via
+the shared \code{compenrid} key.
+\item \strong{v3}: pass a tibble from \code{\link[=selma_component_grades]{selma_component_grades()}} — joined via the
+\code{enrolment_component} IRI-reference column.
+}
 }
 \examples{
 \dontrun{
 con <- selma_connect()
-attempt_details <- selma_join_attempts(
-  selma_component_attempts(con), selma_components(con)
-)
+
+# v2
+selma_join_attempts(selma_component_attempts(con), selma_components(con))
+
+# v3
+selma_join_attempts(selma_component_grades(con), selma_components(con))
 }
 }

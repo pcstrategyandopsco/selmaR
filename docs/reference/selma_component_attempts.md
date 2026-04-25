@@ -1,7 +1,8 @@
-# Fetch component assessment attempts from SELMA
+# Fetch component assessment attempts from SELMA (v2 only)
 
 Retrieves individual assessment attempt records for enrolment
-components, including grades, dates, and outcomes.
+components. This endpoint exists in SELMA v2 only. For v3, use
+[`selma_component_grades()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_component_grades.md).
 
 ## Usage
 
@@ -27,7 +28,7 @@ selma_component_attempts(
 
 - compenrid:
 
-  Filter by enrolment component ID.
+  Filter by enrolment component ID (v2 only).
 
 - cache:
 
@@ -51,9 +52,7 @@ selma_component_attempts(
 
 ## Value
 
-A tibble of component attempt records with columns including
-`component_attempt_id`, `compenrid`, `attemptdate`, `attemptgrade`, and
-`attemptoutcome`.
+A tibble of component attempt records.
 
 ## Examples
 

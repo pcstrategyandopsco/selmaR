@@ -68,10 +68,11 @@ reference:
       - selma_get_one
       - make_entity_fetcher
 
-  - title: Notes, Contacts & Addresses
-    desc: Student notes, external contacts, and address records.
+  - title: Notes, Events & Contacts
+    desc: Student notes/comments, events, external contacts, and address records.
     contents:
       - selma_notes
+      - selma_events
       - selma_contacts
       - selma_student_contacts
       - selma_student_relations
@@ -97,6 +98,7 @@ reference:
     contents:
       - selma_enrolment_awards
       - selma_component_attempts
+      - selma_component_grades
       - selma_component_definitions
       - selma_grading_schemes
       - selma_intake_fees

@@ -1,6 +1,6 @@
 # Join classes to campuses
 
-Links class records to their campus locations.
+Links class records to their campus locations. Works on v2 and v3 data.
 
 ## Usage
 

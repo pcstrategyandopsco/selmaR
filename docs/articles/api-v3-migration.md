@@ -205,10 +205,23 @@ below are your reference.
 | `bank_acc`          | `bank_account`          |
 | `surname`           | `surname` *(unchanged)* |
 
-Fields **removed in v3**: `nsn`, `contacts`, `initials`,
-`identitychecked`, `international`, `mainagent`, `austresidency`,
-`residency`, `residentialstatus`, `passportnumber`, `passportexpiry`,
-`visatype`, `visanumber`, `visaexpiry`, `ethnicity1`–`3`, `iwi1`–`3`.
+**`nsn` (integer) → `national_student_number` (string)**: Moved out of
+the main student record into the `new_zealand_student_extension` nested
+object. Also available as its own paginated endpoint:
+
+``` r
+
+# Fetch NZ student extensions (includes national_student_number)
+nz_ext <- selma_get(con, "new_zealand_student_extensions")
+
+# Or for a single student
+nz_ext <- selma_get(con, "new_zealand_student_extensions/students/42")
+```
+
+Fields **removed in v3**: `contacts`, `initials`, `identitychecked`,
+`international`, `mainagent`, `austresidency`, `residency`,
+`residentialstatus`, `passportnumber`, `passportexpiry`, `visatype`,
+`visanumber`, `visaexpiry`, `ethnicity1`–`3`, `iwi1`–`3`.
 
 Fields **new in v3**: `pronoun`, `contact_id`, `user_name`,
 `email_school`, `phone_work`, `homestay`, `primary_learning_style`,

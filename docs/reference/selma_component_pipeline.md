@@ -1,8 +1,7 @@
 # Build a full component pipeline
 
-Joins components to enrolments, students, and intakes in one step.
-Useful for building detailed per-component reports with full student and
-intake context.
+Joins components to enrolments, students, and intakes in one step. Works
+on v2 and v3 data — join keys are detected automatically.
 
 ## Usage
 

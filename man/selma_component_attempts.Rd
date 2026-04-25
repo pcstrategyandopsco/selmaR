@@ -2,7 +2,7 @@
 % Please edit documentation in R/component_attempts.R
 \name{selma_component_attempts}
 \alias{selma_component_attempts}
-\title{Fetch component assessment attempts from SELMA}
+\title{Fetch component assessment attempts from SELMA (v2 only)}
 \usage{
 selma_component_attempts(
   con = NULL,
@@ -18,7 +18,7 @@ selma_component_attempts(
 \item{con}{A \code{selma_connection} object from \code{\link[=selma_connect]{selma_connect()}}, or \code{NULL}
 (default) to use the stored connection.}
 
-\item{compenrid}{Filter by enrolment component ID.}
+\item{compenrid}{Filter by enrolment component ID (v2 only).}
 
 \item{cache}{If \code{TRUE}, use RDS caching (default \code{FALSE}).}
 
@@ -31,13 +31,11 @@ selma_component_attempts(
 \item{.progress}{Show progress messages (default \code{TRUE}).}
 }
 \value{
-A tibble of component attempt records with columns including
-\code{component_attempt_id}, \code{compenrid}, \code{attemptdate}, \code{attemptgrade},
-and \code{attemptoutcome}.
+A tibble of component attempt records.
 }
 \description{
-Retrieves individual assessment attempt records for enrolment components,
-including grades, dates, and outcomes.
+Retrieves individual assessment attempt records for enrolment components.
+This endpoint exists in SELMA v2 only. For v3, use \code{\link[=selma_component_grades]{selma_component_grades()}}.
 }
 \examples{
 \dontrun{

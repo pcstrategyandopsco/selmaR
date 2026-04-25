@@ -1,7 +1,7 @@
 # Join enrolments with intake details
 
-Convenience function that joins enrolments to intakes, adding intake
-dates, programme links, and cohort information to each enrolment.
+Convenience function that joins enrolments to intakes. Works on both v2
+and v3 data — the join key is detected automatically from column names.
 
 ## Usage
 

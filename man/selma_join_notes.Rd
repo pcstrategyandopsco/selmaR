@@ -4,27 +4,42 @@
 \alias{selma_join_notes}
 \title{Join notes to students}
 \usage{
-selma_join_notes(notes, students)
+selma_join_notes(notes, students, events = NULL)
 }
 \arguments{
 \item{notes}{A tibble from \code{\link[=selma_notes]{selma_notes()}}.}
 
 \item{students}{A tibble from \code{\link[=selma_students]{selma_students()}}.}
+
+\item{events}{A tibble from \code{\link[=selma_events]{selma_events()}} (required for v3 data, ignored
+on v2).}
 }
 \value{
 A tibble with note and student columns joined.
 }
 \description{
-Links note records to student records. On v2, notes have a direct
-\code{student_id} foreign key. On v3, notes (comments) are linked via events
-rather than directly to students — this function works on v2 only and
-aborts with an informative message on v3.
+Links note records to student records. Works on both v2 and v3 data:
+}
+\details{
+\itemize{
+\item \strong{v2}: notes have a direct \code{student_id} foreign key — joined in one step.
+\item \strong{v3}: notes (comments) link to students via events. Pass the events
+tibble from \code{\link[=selma_events]{selma_events()}} via the \code{events} argument to enable the
+two-step join: comments → events → students.
+}
 }
 \examples{
 \dontrun{
 con <- selma_connect()
-notes_with_students <- selma_join_notes(
-  selma_notes(con), selma_students(con)
+
+# v2
+selma_join_notes(selma_notes(con), selma_students(con))
+
+# v3
+selma_join_notes(
+  selma_notes(con),
+  selma_students(con),
+  events = selma_events(con)
 )
 }
 }

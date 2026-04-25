@@ -1,7 +1,7 @@
 # Join components to enrolments
 
 Links component-level data (individual course units) back to their
-parent enrolments. Useful for building detailed per-component reports.
+parent enrolments. Works on v2 and v3 data.
 
 ## Usage
 

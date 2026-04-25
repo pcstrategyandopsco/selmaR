@@ -34,12 +34,14 @@ Fetch the main SELMA entities. Most accept optional filter parameters.
 - [`make_entity_fetcher()`](https://pcstrategyandopsco.github.io/selmaR/reference/make_entity_fetcher.md)
   : Create a fetch function for any SELMA endpoint
 
-## Notes, Contacts & Addresses
+## Notes, Events & Contacts
 
-Student notes, external contacts, and address records.
+Student notes/comments, events, external contacts, and address records.
 
 - [`selma_notes()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_notes.md)
   : Fetch notes and events from SELMA
+- [`selma_events()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_events.md)
+  : Fetch event records from SELMA (v3)
 - [`selma_contacts()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_contacts.md)
   : Fetch external contacts from SELMA
 - [`selma_student_contacts()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_student_contacts.md)
@@ -80,7 +82,9 @@ Qualifications, assessment attempts, grading, and fee schedules.
 - [`selma_enrolment_awards()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_enrolment_awards.md)
   : Fetch enrolment awards from SELMA
 - [`selma_component_attempts()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_component_attempts.md)
-  : Fetch component assessment attempts from SELMA
+  : Fetch component assessment attempts from SELMA (v2 only)
+- [`selma_component_grades()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_component_grades.md)
+  : Fetch component grade/attempt records from SELMA (v3)
 - [`selma_component_definitions()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_component_definitions.md)
   : Fetch component definitions from SELMA
 - [`selma_grading_schemes()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_grading_schemes.md)
@@ -139,7 +143,7 @@ Convenience functions for common entity joins.
 - [`selma_join_classes()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_join_classes.md)
   : Join classes to campuses
 - [`selma_join_attempts()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_join_attempts.md)
-  : Join component attempts to enrolment components
+  : Join component attempts (or grades) to enrolment components
 
 ## Utilities
 
