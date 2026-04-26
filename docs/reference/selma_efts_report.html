@@ -72,9 +72,12 @@ TEO that needs to replicate SELMA's funding report.</p>
 
 <dl><dt id="arg-components">components<a class="anchor" aria-label="anchor" href="#arg-components"></a></dt>
 <dd><p>A tibble of enrolment components (from
-<code><a href="selma_components.html">selma_components()</a></code>). Must contain columns: <code>compenrstartdate</code>,
+<code><a href="selma_components.html">selma_components()</a></code>). v2 data must contain <code>compenrstartdate</code>,
 <code>compenrenddate</code>, <code>compenrefts</code>, <code>compenrstatus</code>, <code>compenrsource</code>,
-<code>compenrfundingcategory</code>, <code>enrolid</code>.</p></dd>
+<code>compenrfundingcategory</code>, and <code>enrolid</code>. v3 data must contain
+<code>start_date</code>, <code>end_date</code>, <code>enrolment_status</code>, <code>enrolment</code>, and optionally
+<code>efts</code> (available if NZ component extensions have been joined via
+<code>selma_get(con, "new_zealand_enrolment_component_extensions")</code>).</p></dd>
 
 
 <dt id="arg-year">year<a class="anchor" aria-label="anchor" href="#arg-year"></a></dt>

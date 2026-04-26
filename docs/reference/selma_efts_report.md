@@ -21,9 +21,13 @@ selma_efts_report(
 
   A tibble of enrolment components (from
   [`selma_components()`](https://pcstrategyandopsco.github.io/selmaR/reference/selma_components.md)).
-  Must contain columns: `compenrstartdate`, `compenrenddate`,
+  v2 data must contain `compenrstartdate`, `compenrenddate`,
   `compenrefts`, `compenrstatus`, `compenrsource`,
-  `compenrfundingcategory`, `enrolid`.
+  `compenrfundingcategory`, and `enrolid`. v3 data must contain
+  `start_date`, `end_date`, `enrolment_status`, `enrolment`, and
+  optionally `efts` (available if NZ component extensions have been
+  joined via
+  `selma_get(con, "new_zealand_enrolment_component_extensions")`).
 
 - year:
 

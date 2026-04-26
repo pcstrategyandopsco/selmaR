@@ -7,7 +7,9 @@
 #   all    — no restrictions (for lookup tables with no PII)
 #
 # Field names must match the actual SELMA API output after clean_names().
-# Verified against live API 2026-03-20.
+# Both v2 and v3 names are listed; apply_field_policy() uses intersect() so
+# only columns that exist in the data pass through — extra names are harmless.
+# Verified against live API 2026-03-20; v3 names added 2026-04-25.
 #
 # To override: set SELMAR_FIELD_POLICY env var to your custom YAML path,
 # or place a field_policy.yml in the working directory.
@@ -16,6 +18,7 @@ students:
   mode: allow
   fields:
     - id
+    # v2 fields
     - status
     - title
     - gender
@@ -37,16 +40,33 @@ students:
     - organisation
     - interested_progid
     - interested_intakeid
-  # Hidden: surname, forename, preferredname, middlename, initials,
-  #         email1, email2, mobilephone, secondaryphone, dob, nsn,
-  #         passportnumber, passportexpiry, visanumber, visaexpiry,
-  #         medicalcondition, medicallist, medinsurance, ird_number,
-  #         bank_acc, driver_licence, disability, disabilitydetails
+    # v3 equivalents / new fields
+    - student_status
+    - pronoun
+    - country_of_birth
+    - fees_free
+    - other_id_1
+    - other_id_2
+    - student_identifier
+    - homestay
+    - primary_learning_style
+    - secondary_learning_style
+    - contact_id
+    - new_zealand_student_extension
+    - australia_student_extension
+  # Hidden (both versions): surname/first_name, forename/last_name, preferredname/preferred_name,
+  #   middlename/middle_name, email1/email_primary, email2/email_secondary,
+  #   mobilephone/phone_mobile, secondaryphone/phone_home, phone_work,
+  #   dob/date_of_birth, nsn/national_student_number,
+  #   passportnumber, passportexpiry, visanumber, visaexpiry,
+  #   medicalcondition/medical_condition, bank_acc/bank_account,
+  #   disability, disabilitydetails/disability_details, user_name, email_school
 
 enrolments:
   mode: allow
   fields:
     - id
+    # v2 fields
     - student_id
     - intake_id
     - enrstatus
@@ -68,10 +88,31 @@ enrolments:
     - percent_attendance
     - percent_in_programme
     - percent_progress
+    # v3 equivalents
+    - student
+    - intake
+    - enrolment_status
+    - start_date
+    - end_date
+    - enrolment_status_date
+    - return_type
+    - attendance
+    - completed_successfully
+    - enrolment_payer_type_id
+    - finished_date
+    - completion_grade
+    - qualification_code
+    - withdrawal_reason
+    - withdrawal_date
+    - fees_free
+    - other_id_1
+    - created_at
+    - updated_at
 
 components:
   mode: allow
   fields:
+    # v2 fields
     - compenrid
     - compid
     - parentid
@@ -104,13 +145,33 @@ components:
     - milestone
     - createddate
     - updateddate
-  # Hidden: compenrassessmentnote, userfieldchar*, userfielddate*,
-  #         userfieldbit*, userfieldint*, userfielddecimal*,
+    # v3 equivalents
+    - id
+    - component
+    - enrolment
+    - start_date
+    - end_date
+    - due_date
+    - enrolment_status
+    - return_type
+    - payer_type_id
+    - funding_category
+    - attendance
+    - grade
+    - completion_code
+    - completion_date
+    - extension_date
+    - withdrawal_reason
+    - withdrawal_date
+    - created_at
+    - updated_at
+  # Hidden: compenrassessmentnote/assessment_note, userfieldchar*/custom_field_values,
   #         createdby, updatedby (usernames)
 
 intakes:
   mode: allow
   fields:
+    # v2 fields
     - intakeid
     - intakecode
     - intakestatus
@@ -127,11 +188,23 @@ intakes:
     - fees
     - createddate
     - updateddate
+    # v3 equivalents
+    - id
+    - code
+    - intake_status
+    - programme
+    - campus
+    - name
+    - start_date
+    - end_date
+    - created_at
+    - updated_at
   # Hidden: createdby, updatedby (usernames)
 
 programmes:
   mode: allow
   fields:
+    # v2 fields
     - progid
     - progcode
     - progversion
@@ -148,22 +221,43 @@ programmes:
     - progress_type
     - createddate
     - updateddate
+    # v3 equivalents
+    - id
+    - code
+    - version
+    - title
+    - description
+    - credit_equivalent
+    - level_equivalent
+    - efts
+    - status
+    - length
+    - length_units
+    - created_at
+    - updated_at
   # Hidden: createdby, updatedby (usernames)
 
 contacts:
   mode: allow
   fields:
     - id
+    # v2 fields
     - type_2
     - gender
     - status
     - createddate
-  # Hidden: surname, forename, preferredname, middlename, initials,
-  #         email1, mobilephone, secondaryphone, workphone, dob, otherid
+    # v3 equivalents
+    - contact_type
+    - contact_status
+    - created_at
+  # Hidden: surname/last_name, forename/first_name, preferredname/preferred_name,
+  #         email1/email, mobilephone/phone_mobile, secondaryphone/phone_home,
+  #         workphone/phone_work, dob/date_of_birth, otherid/other_id
 
 addresses:
   mode: allow
   fields:
+    # v2 fields
     - addressid
     - addresstype
     - city
@@ -177,11 +271,22 @@ addresses:
     - contactid
     - createddate
     - updateddate
-  # Hidden: street, suburb (too specific for PII)
+    # v3 equivalents
+    - id
+    - address_type
+    - valid_from
+    - valid_to
+    - student
+    - organisation
+    - contact
+    - created_at
+    - updated_at
+  # Hidden: street/street_address, suburb (too specific for PII)
 
 notes:
   mode: allow
   fields:
+    # v2 fields
     - noteid
     - student_id
     - enrolmentid
@@ -189,7 +294,43 @@ notes:
     - notearea
     - confidential
     - createddate
-  # Hidden: note1 (free text may contain PII), createdby (username)
+    # v3 equivalents (comments endpoint)
+    - id
+    - event
+    - note_type
+    - area
+    - created_at
+  # Hidden: note1/body (free text may contain PII), createdby/created_by (username)
+
+# v3 only — events link comments/tasks/emails to students/enrolments
+events:
+  mode: allow
+  fields:
+    - id
+    - student
+    - enrolment
+    - intake
+    - event_type
+    - event_subject
+    - event_priority
+    - event_complete
+    - event_due_date
+    - created_at
+    - updated_at
+  # Hidden: event_body (may contain PII — free text email/note content)
+
+# v3 only — replaces v2 enrolment_component_attempts
+component_grades:
+  mode: allow
+  fields:
+    - id
+    - enrolment_component
+    - attempt_date
+    - numerical_value
+    - grade
+    - created_at
+    - updated_at
+  # Hidden: note (free text assessment note may contain PII)
 
 organisations:
   mode: allow
@@ -200,6 +341,9 @@ organisations:
     - orgtype
     - country
     - registration_number
+    # v3 equivalents
+    - legal_name
+    - org_type
   # Note: currently returns 0 rows in production
 
 classes:
@@ -214,6 +358,12 @@ classes:
     - campusid
     - active
     - createddate
+    # v3 equivalents
+    - name
+    - start_date
+    - end_date
+    - campus
+    - created_at
   # Hidden: description (may contain PII), otherid, createdby
 
 # Lookup entities -- no PII

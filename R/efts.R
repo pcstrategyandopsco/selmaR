@@ -5,9 +5,12 @@
 #' TEO that needs to replicate SELMA's funding report.
 #'
 #' @param components A tibble of enrolment components (from
-#'   [selma_components()]). Must contain columns: `compenrstartdate`,
+#'   [selma_components()]). v2 data must contain `compenrstartdate`,
 #'   `compenrenddate`, `compenrefts`, `compenrstatus`, `compenrsource`,
-#'   `compenrfundingcategory`, `enrolid`.
+#'   `compenrfundingcategory`, and `enrolid`. v3 data must contain
+#'   `start_date`, `end_date`, `enrolment_status`, `enrolment`, and optionally
+#'   `efts` (available if NZ component extensions have been joined via
+#'   `selma_get(con, "new_zealand_enrolment_component_extensions")`).
 #' @param year Calendar year to report on (default: current year).
 #' @param funded_statuses Character vector of component status codes to
 #'   include (default: `SELMA_ALL_FUNDED_STATUSES`).
@@ -29,6 +32,40 @@ selma_efts_report <- function(components,
 
   year_start <- as.Date(str_c(year, "-01-01"))
   year_end <- as.Date(str_c(year, "-12-31"))
+
+  # Detect API version from column names and normalise to internal names
+  is_v3 <- "enrolment_status" %in% names(components)
+
+  if (is_v3) {
+    if (!all(c("start_date", "end_date", "enrolment_status", "enrolment") %in% names(components))) {
+      abort(c(
+        "selma_efts_report() is missing required v3 columns.",
+        "i" = "Expected: start_date, end_date, enrolment_status, enrolment",
+        "i" = "For EFTS values, join new_zealand_enrolment_component_extensions first."
+      ))
+    }
+    if (!"efts" %in% names(components)) {
+      abort(c(
+        "selma_efts_report() requires an efts column for v3 data.",
+        "i" = "Fetch and join new_zealand_enrolment_component_extensions to get EFTS values:",
+        "i" = "nz_ext <- selma_get(con, \"new_zealand_enrolment_component_extensions\")",
+        "i" = "components <- dplyr::left_join(components, nz_ext, by = c(\"id\" = \"enrolment_component\"))"
+      ))
+    }
+    # Create v2-style column aliases so the shared computation below works unchanged
+    has_source   <- "payer_type_id"    %in% names(components)
+    has_category <- "funding_category" %in% names(components)
+    components <- components |>
+      mutate(
+        compenrstartdate       = .data$start_date,
+        compenrenddate         = .data$end_date,
+        compenrefts            = .data$efts,
+        compenrstatus          = .data$enrolment_status,
+        enrolid                = .data$enrolment,
+        compenrsource          = if (has_source)   .data$payer_type_id    else NA_character_,
+        compenrfundingcategory = if (has_category) .data$funding_category else NA_character_
+      )
+  }
 
   df <- components |>
     mutate(

@@ -13,9 +13,12 @@ selma_efts_report(
 }
 \arguments{
 \item{components}{A tibble of enrolment components (from
-\code{\link[=selma_components]{selma_components()}}). Must contain columns: \code{compenrstartdate},
+\code{\link[=selma_components]{selma_components()}}). v2 data must contain \code{compenrstartdate},
 \code{compenrenddate}, \code{compenrefts}, \code{compenrstatus}, \code{compenrsource},
-\code{compenrfundingcategory}, \code{enrolid}.}
+\code{compenrfundingcategory}, and \code{enrolid}. v3 data must contain
+\code{start_date}, \code{end_date}, \code{enrolment_status}, \code{enrolment}, and optionally
+\code{efts} (available if NZ component extensions have been joined via
+\code{selma_get(con, "new_zealand_enrolment_component_extensions")}).}
 
 \item{year}{Calendar year to report on (default: current year).}
 

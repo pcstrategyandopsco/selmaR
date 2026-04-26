@@ -322,11 +322,22 @@ PII_PATTERNS <- list(
 .pii_dictionary$values <- character(0)
 
 PII_DICTIONARY_SOURCES <- list(
-  students = c("surname", "forename", "preferredname",
-               "email1", "email2", "mobilephone", "homephone",
-               "workphone", "nsn"),
-  contacts = c("surname", "forename", "email",
-               "mobilephone", "workphone")
+  # Both v2 and v3 column names — intersect() picks whichever exists in data
+  students = c(
+    # v2
+    "surname", "forename", "preferredname",
+    "email1", "email2", "mobilephone", "homephone", "workphone", "nsn",
+    # v3
+    "last_name", "first_name", "preferred_name",
+    "email_primary", "email_secondary", "phone_mobile", "phone_home",
+    "phone_work", "email_school", "national_student_number", "user_name"
+  ),
+  contacts = c(
+    # v2
+    "surname", "forename", "email", "mobilephone", "workphone",
+    # v3
+    "last_name", "first_name", "email", "phone_mobile", "phone_work"
+  )
 )
 
 build_pii_dictionary <- function(df, entity_name) {
@@ -584,6 +595,16 @@ ENTITY_REGISTRY <- list(
     description = "Title lookup codes (Mr, Mrs, etc.)",
     fetch_fn = "selma_titles",
     endpoint = "titles"
+  ),
+  events = list(
+    description = "Event records (v3 only) — link notes/tasks/emails to students, enrolments, or intakes",
+    fetch_fn = "selma_events",
+    endpoint = "events"
+  ),
+  component_grades = list(
+    description = "Component grade/attempt records (v3 only) — assessment attempts against enrolment components",
+    fetch_fn = "selma_component_grades",
+    endpoint = "enrolment_component_grades"
   )
 )
 
@@ -1068,20 +1089,10 @@ handle_get_efts_report <- function(args) {
 
   include_intl <- isTRUE(args$include_international)
 
-  # Fetch components (uses cache)
-  components <- get_cached_entity("components")
-
-  # Call selma_efts_report — it needs the raw component data with EFTS fields
   # Re-fetch without field policy for the EFTS calculation (internal only)
   raw_components <- tryCatch({
-    if (exists("components", envir = .entity_cache)) {
-      # We need the raw data for EFTS calc; fetch again without policy
-      fetch_fn <- get("selma_components", envir = asNamespace("selmaR"))
-      suppressMessages(fetch_fn())
-    } else {
-      fetch_fn <- get("selma_components", envir = asNamespace("selmaR"))
-      suppressMessages(fetch_fn())
-    }
+    fetch_fn <- get("selma_components", envir = asNamespace("selmaR"))
+    suppressMessages(fetch_fn())
   }, error = function(e) {
     return(scan_result(
       mcp_result(list(mcp_text(paste0("Error fetching components: ", conditionMessage(e)))),
@@ -1092,6 +1103,26 @@ handle_get_efts_report <- function(args) {
 
   if (inherits(raw_components, "list") && !is.data.frame(raw_components)) {
     return(raw_components)  # error result from tryCatch
+  }
+
+  # For v3: EFTS values live in new_zealand_enrolment_component_extensions.
+  # Join them in automatically so the user doesn't need to know about this.
+  is_v3 <- "enrolment_status" %in% names(raw_components)
+  if (is_v3 && !"efts" %in% names(raw_components)) {
+    raw_components <- tryCatch({
+      nz_ext_fn <- get("selma_get", envir = asNamespace("selmaR"))
+      nz_ext <- suppressMessages(nz_ext_fn(endpoint = "new_zealand_enrolment_component_extensions"))
+      # nz_ext has: enrolment_component (FK char) + efts + other NZ-specific cols
+      dplyr::left_join(
+        raw_components,
+        dplyr::select(nz_ext, "enrolment_component", "efts",
+                      dplyr::any_of(c("funding_category", "payer_type_id"))),
+        by = c("id" = "enrolment_component")
+      )
+    }, error = function(e) {
+      # Not a fatal error — selma_efts_report will abort with guidance
+      raw_components
+    })
   }
 
   efts <- tryCatch(
@@ -1480,22 +1511,36 @@ SERVER_INSTRUCTIONS <- paste0(
   "3. get_entity_summary with filter_by/group_by — quick aggregate stats\n",
   "4. get_efts_report — EFTS funding analysis (no code needed)\n",
   "5. execute_r — custom dplyr/ggplot2 analysis (data loading is automatic, 60-sec compute timeout)\n\n",
+  "API VERSIONS\n",
+  "SELMA has two API versions — v2 (legacy) and v3 (current). The server detects\n",
+  "the version automatically. Column names differ significantly between versions.\n",
+  "Use describe_entity() to see the actual column names for your connected instance.\n\n",
   "SELMA DATA MODEL\n",
   "Students enrol into Intakes (cohorts) via Enrolments.\n",
   "Each Enrolment contains Components (individual course units with EFTS values).\n",
   "Intakes belong to Programmes (qualifications).\n\n",
-  "  students --(student_id)--> enrolments --(intake_id)--> intakes --(progid)--> programmes\n",
-  "                                |\n",
-  "                          enrolments --(enrolid)--> components\n\n",
-  "JOIN KEYS (use these exact column names for joins)\n",
-  "- students.id = enrolments.student_id (also components.studentid)\n",
-  "- enrolments.id = components.enrolid (also components.parentid)\n",
-  "- enrolments.intake_id = intakes.intakeid\n",
-  "- intakes.progid = programmes.progid\n",
+  "  students --> enrolments --> intakes --> programmes\n",
+  "                  |\n",
+  "              components\n\n",
+  "JOIN KEYS — v2\n",
+  "- students.id = enrolments.student_id\n",
+  "- enrolments.id = components.enrolid\n",
+  "- enrolments.intake_id = intakes.intakeid (integer)\n",
+  "- intakes.progid = programmes.progid (integer)\n",
   "- addresses.studentid = students.id\n",
-  "- notes.student_id = students.id, notes.enrolmentid = enrolments.id\n",
-  "- Or use the join helpers: selma_join_students(), selma_join_intakes(), etc.\n\n",
-  "ENTITY FIELDS (policy-filtered — only these columns are visible)\n",
+  "- notes.student_id = students.id\n\n",
+  "JOIN KEYS — v3 (foreign keys are character strings after IRI stripping)\n",
+  "- students.id = as.integer(enrolments.student)\n",
+  "- enrolments.id = as.integer(components.enrolment)\n",
+  "- as.integer(enrolments.intake) = intakes.id\n",
+  "- as.integer(intakes.programme) = programmes.id\n",
+  "- as.integer(addresses.student) = students.id\n",
+  "- v3 notes (comments) link via events: notes.event -> events.id -> events.student -> students.id\n\n",
+  "Use the join helpers — they handle both versions automatically:\n",
+  "selma_join_students(), selma_join_intakes(), selma_join_components(),\n",
+  "selma_join_programmes(), selma_join_notes(notes, students, events = events),\n",
+  "selma_join_addresses(), selma_join_classes(), selma_join_attempts()\n\n",
+  "ENTITY FIELDS — v2 column names\n",
   "students: id, status, title, gender, international, citizenship, residency,\n",
   "  residentialstatus, ethnicity1-3, ethnicity, countryofbirth, visatype, feesfree,\n",
   "  prestudyactivity, highpostschoolqual, third_party_id, third_party_id2,\n",
@@ -1506,44 +1551,62 @@ SERVER_INSTRUCTIONS <- paste0(
   "  enrwithdrawalreason, enrwithdrawaldate, enrfeesfree, strand_id, third_party_id,\n",
   "  percent_attendance, percent_in_programme, percent_progress\n",
   "components: compenrid, compid, parentid, enrolid, studentid, compenrstartdate,\n",
-  "  compenrenddate, compenrduedate, compenrstatus, compenrreturntype, compenrsource,\n",
-  "  compenrefts, compenrfeetf, compenrfundingcategory, compenrresidency,\n",
-  "  compenrattendance, compenrgrade, compenrcompletioncode, compenrcompletiondate,\n",
-  "  compenrextensiondate, compenrwithdrawalreason, compenrwithdrawaldate,\n",
-  "  compenrfeepayingstatus, comp_title, comp_credit_fw, comp_level_fw, comp_code,\n",
-  "  comp_version, comp_type, milestone, createddate, updateddate\n",
+  "  compenrenddate, compenrduedate, compenrstatus, compenrsource, compenrefts,\n",
+  "  compenrfundingcategory, compenrattendance, compenrgrade, compenrcompletioncode,\n",
+  "  compenrcompletiondate, compenrextensiondate, compenrwithdrawaldate,\n",
+  "  comp_title, comp_credit_fw, comp_level_fw, comp_code, comp_version, comp_type,\n",
+  "  milestone, createddate, updateddate\n",
   "intakes: intakeid, intakecode, intakestatus, progid, campus_id, intake_name,\n",
-  "  intakestartdate, intakeenddate, available_spaces, prog_ie_min_places,\n",
-  "  prog_ie_max_places, strand_id, funding_source, fees, createddate, updateddate\n",
+  "  intakestartdate, intakeenddate, available_spaces, funding_source, fees,\n",
+  "  createddate, updateddate\n",
   "programmes: progid, progcode, progversion, progtitle, progdescription, progcrediteq,\n",
-  "  progleveleq, progefts, progstatus, proglength, proglengthunits, ygtype,\n",
-  "  nzqacode, progress_type, createddate, updateddate\n",
-  "contacts: id, type_2, gender, status, createddate\n",
-  "addresses: addressid, addresstype, city, postcode, region, country, validfrom,\n",
-  "  validto, studentid, orgid, contactid, createddate, updateddate\n",
-  "notes: noteid, student_id, enrolmentid, notetype, notearea, confidential, createddate\n",
-  "classes: id, class_name, capacity, enrolment_count, startdate, enddate, campusid,\n",
-  "  active, createddate\n",
+  "  progleveleq, progefts, progstatus, proglength, proglengthunits, nzqacode,\n",
+  "  progress_type, createddate, updateddate\n",
+  "notes: noteid, student_id, enrolmentid, notetype, notearea, confidential, createddate\n\n",
+  "ENTITY FIELDS — v3 column names (snake_case throughout)\n",
+  "students: id, student_status, title, gender, country_of_birth, fees_free,\n",
+  "  other_id_1, other_id_2, pronoun, student_identifier, homestay,\n",
+  "  primary_learning_style, secondary_learning_style, contact_id,\n",
+  "  new_zealand_student_extension\n",
+  "enrolments: id, student (FK char), intake (FK char), enrolment_status, start_date,\n",
+  "  end_date, enrolment_status_date, return_type, attendance, completed_successfully,\n",
+  "  enrolment_payer_type_id, finished_date, withdrawal_reason, withdrawal_date,\n",
+  "  fees_free, other_id_1, created_at, updated_at\n",
+  "components: id, component (FK char), enrolment (FK char), start_date, end_date,\n",
+  "  due_date, enrolment_status, payer_type_id, funding_category, attendance, grade,\n",
+  "  completion_code, completion_date, extension_date, withdrawal_date, created_at, updated_at\n",
+  "intakes: id, code, intake_status, programme (FK char), campus (FK char), name,\n",
+  "  start_date, end_date, created_at, updated_at\n",
+  "programmes: id, code, version, title, description, efts, status, created_at, updated_at\n",
+  "events (v3 only): id, student (FK), enrolment (FK), intake (FK), event_type,\n",
+  "  event_subject, event_priority, event_complete, event_due_date, created_at\n",
+  "component_grades (v3 only): id, enrolment_component (FK), attempt_date,\n",
+  "  numerical_value, grade, created_at\n",
+  "contacts: id, type_2 (v2) / contact_type (v3), gender, status, createddate/created_at\n",
+  "addresses: addressid/id, addresstype/address_type, city, postcode, region, country,\n",
+  "  validfrom/valid_from, validto/valid_to, studentid/student, createddate/created_at\n",
+  "classes: id, class_name/name, capacity, enrolment_count, startdate/start_date,\n",
+  "  enddate/end_date, campusid/campus, active, createddate/created_at\n",
   "campuses, ethnicities, countries, genders, titles: all fields (lookup tables)\n\n",
   "KEY DATE FIELDS\n",
-  "- Enrolment start/end: enrolments.enrstartdate / enrenddate\n",
-  "- Withdrawal date: enrolments.enrwithdrawaldate\n",
-  "- Completion date: enrolments.enrcompletiondate\n",
-  "- Status change date: enrolments.enrstatusdate\n",
-  "- Component start/end: components.compenrstartdate / compenrenddate\n",
-  "- Component completion: components.compenrcompletiondate\n",
-  "- Intake start/end: intakes.intakestartdate / intakeenddate\n",
-  "- Record timestamps: *.createddate, *.updateddate (components, intakes, programmes)\n",
-  "- NOTE: students entity has NO creation/update date fields from the API\n\n",
+  "v2: enrolments.enrstartdate/enrenddate, enrolments.enrwithdrawaldate,\n",
+  "    enrolments.enrcompletiondate, enrolments.enrstatusdate,\n",
+  "    components.compenrstartdate/compenrenddate, intakes.intakestartdate/intakeenddate\n",
+  "v3: enrolments.start_date/end_date, enrolments.withdrawal_date,\n",
+  "    enrolments.finished_date, enrolments.enrolment_status_date,\n",
+  "    components.start_date/end_date, intakes.start_date/end_date\n",
+  "Both: *.created_at, *.updated_at (v3) / *.createddate, *.updateddate (v2)\n",
+  "NOTE: students entity has NO creation/update date fields from the API\n\n",
   "WORKSPACE FUNCTIONS\n",
   "- selma_get_entity(\"students\") or selma_students() — fetch + policy-filter + cache\n",
   "- selma_enrolments(), selma_intakes(), selma_components(), selma_programmes()\n",
+  "- selma_events(), selma_component_grades() — v3 only\n",
   "- selma_student_pipeline(enrolments, students, intakes) — common 3-way join\n",
   "- selma_component_pipeline(components, enrolments, students, intakes) — full join\n",
   "- selma_join_students(), selma_join_intakes(), selma_join_components(),\n",
-  "  selma_join_programmes() — individual join helpers\n",
+  "  selma_join_programmes(), selma_join_notes(), selma_join_attempts() — join helpers\n",
   "- Variables persist between execute_r calls\n\n",
-  "ENROLMENT STATUS CODES (use these constants, do not hardcode strings)\n",
+  "ENROLMENT STATUS CODES (same in v2 and v3)\n",
   "- SELMA_STATUS_CONFIRMED   = \"C\"  — Currently enrolled, confirmed\n",
   "- SELMA_STATUS_COMPLETED   = \"FC\" — Finished, completed successfully\n",
   "- SELMA_STATUS_INCOMPLETE  = \"FI\" — Finished, did not complete\n",
@@ -1564,11 +1627,19 @@ SERVER_INSTRUCTIONS <- paste0(
   "- \"31\" = Youth Guarantee\n",
   "- \"37\" = Non-degree L3-7 NZQCF\n\n",
   "COMMON PATTERNS\n",
-  "# Active funded enrolments\n",
+  "# Active funded enrolments — v2\n",
   "enrolments |> filter(enrstatus %in% SELMA_FUNDED_STATUSES)\n\n",
-  "# Enrolment counts by programme\n",
+  "# Active funded enrolments — v3\n",
+  "enrolments |> filter(enrolment_status %in% SELMA_FUNDED_STATUSES)\n\n",
+  "# Enrolment counts by programme — v2\n",
   "pipeline <- selma_student_pipeline(selma_enrolments(), selma_students(), selma_intakes())\n",
   "pipeline |> count(progtitle, enrstatus)\n\n",
+  "# Enrolment counts by programme — v3\n",
+  "pipeline <- selma_student_pipeline(selma_enrolments(), selma_students(), selma_intakes())\n",
+  "pipeline |> count(title, enrolment_status)\n\n",
+  "# Notes with student context — v3\n",
+  "notes <- selma_notes(); events <- selma_events(); students <- selma_students()\n",
+  "notes_with_students <- selma_join_notes(notes, students, events = events)\n\n",
   "# EFTS by funding source (use the dedicated tool instead of code)\n",
   "get_efts_report(year = 2025)\n\n",
   "CHARTING\n",
