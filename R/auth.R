@@ -215,8 +215,13 @@ selma_resolve_config <- function(base_url, email, password, config_file,
     )
 
     if (!is.null(selma_cfg)) {
-      # Version-specific block (e.g. selma.v3) takes precedence over flat selma
-      ver_cfg <- if (!is.null(api_version)) selma_cfg[[api_version]] else NULL
+      # Version-specific block takes precedence over flat selma config.
+      # When api_version is NULL, try v3 then v2 blocks (mirrors auth attempt order).
+      if (!is.null(api_version)) {
+        ver_cfg <- selma_cfg[[api_version]]
+      } else {
+        ver_cfg <- selma_cfg[["v3"]] %||% selma_cfg[["v2"]]
+      }
 
       if (result$base_url == "")
         result$base_url <- ver_cfg$base_url %||% selma_cfg$base_url %||% ""

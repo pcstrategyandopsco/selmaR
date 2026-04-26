@@ -127,6 +127,25 @@ tryCatch({
   mcp_log("Config read warning: ", conditionMessage(e))
 })
 
+# ── 3b. SELMA Connection ──────────────────────────────────────────────────
+# Connect at startup using config.yml (cwd first, then package root) or
+# SELMA_* environment variables. Non-fatal — tools error until connected.
+tryCatch({
+  connect_cfg <- if (file.exists("config.yml")) {
+    "config.yml"
+  } else if (nchar(pkg_root) > 0 && file.exists(file.path(pkg_root, "config.yml"))) {
+    file.path(pkg_root, "config.yml")
+  } else {
+    NULL
+  }
+  selmaR::selma_connect(config_file = connect_cfg)
+  mcp_log("SELMA connection established (",
+          selmaR::selma_get_connection()$api_version, ")")
+}, error = function(e) {
+  mcp_log("SELMA connection not established at startup: ", conditionMessage(e))
+  mcp_log("Set credentials in config.yml (cwd) or SELMA_* environment variables.")
+})
+
 # ── 4. Security Layer 1: ID Pseudonymisation ──────────────────────────────
 
 .mcp_seed <- as.character(sample.int(1e9, 1))
